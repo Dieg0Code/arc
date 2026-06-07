@@ -17,24 +17,46 @@ it: recall at the start, persist what you resolve.
 > is the fallback when MCP isn't wired.
 >
 > **Navigate, don't just keyword-search.** nem builds a tree (project → chat →
-> commit). Start with `outline` to see the map, reason about which branch fits,
-> then drill in with `read`. Search is keyword-first (BM25); the structure is how
-> you find things by meaning.
+> commit), each node carrying a summary. Start with `outline` to see the map,
+> reason about which branch fits your task, then drill in with `read`. This is
+> reasoning-based navigation (PageIndex-style) — you find things by *meaning*, not
+> by guessing exact keywords.
 
 ## 1. At the start: RECALL
 
+The loop is: **`outline` (see the map) → reason → `read`/`search`/`timeline`
+(drill in) → repeat.** nem returns small, token-bounded payloads on purpose.
+
 - `nem status` — detected chat, staged messages, latest commit.
-- `nem search "<terms>" --format llm` — search versioned context (full-text) with
-  the task's keywords (module, feature, bug). `--role all` also includes tools.
-- `nem log` — list context commits (hash + message).
-- `nem read HEAD --format llm` / `nem read <hash> --format llm` — the frozen
-  snapshot of a commit. Read it before proposing anything: avoid redoing work or
+- `nem outline [--depth N]` — **start here.** The tree of project → chat → commit,
+  each with a summary. Scan it, pick the branch that matches, then drill in.
+- `nem search "<terms>" --mode hybrid --format llm` — retrieval that fuses BM25
+  (messages + tree nodes) with **semantic embeddings** (when configured) and a
+  recency boost, so it finds things by meaning even when your words don't match.
+  `--mode keyword` = BM25 only (exact terms); `--mode semantic` = vectors only;
+  `--mode hybrid` (default) = both. `--role all` also includes tools.
+- `nem timeline <project|chatID>` — chronological evolution of a project/chat
+  (how a decision changed over time; newest entries are current).
+- `nem read <HEAD|hash|chat:id|commit:hash> --format llm` — the frozen snapshot of
+  a commit or chat node. Read it before proposing anything: avoid redoing work or
   contradicting a prior decision.
+- `nem log` — list context commits (hash + message).
+
+> The tree comes from `nem index` (incremental: it reuses existing summaries and
+> only computes what's new, so re-running after you commit is cheap). If `outline`
+> looks stale or your fresh commits aren't in it, run `nem index`.
 
 > **Scoped access:** you may be limited to a scope (via `NEM_SCOPE` or `--scope`).
 > When scoped, `search`/`read`/`log` only see chats in that scope — so a "no
 > results" doesn't mean a fact never existed, it may just be out of scope.
 > `nem scope list` shows the available scopes.
+
+> **Fix bad summaries.** If a node's summary is wrong, thin, or misleading, rewrite
+> it: `nem annotate <nodeID> -m "<better summary>"` (MCP: `nem_annotate`). Node ids
+> look like `project:foo`, `chat:id`, `commit:hash`. Your summary is *pinned* — it
+> survives `nem index` and flows up into the project summary. This is the mutable
+> layer over the immutable commits: the commit content never changes, but you curate
+> how it's described and found.
 
 ## 2. While working: IDENTIFY what's worth keeping
 

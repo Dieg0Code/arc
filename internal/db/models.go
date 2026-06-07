@@ -79,6 +79,7 @@ type Node struct {
 	Tokens       int    // tamaño aprox. del contenido (para presupuestar)
 	Superseded   bool   // la decisión fue reemplazada por una posterior
 	SupersededBy string // id del nodo/commit que la reemplaza
+	Pinned       bool   `gorm:"index"` // resumen escrito por el agente/humano; `index` nunca lo auto-pisa (capa mutable sobre los commits inmutables)
 }
 
 // Embedding es el vector (opcional) de un nodo del índice, guardado como BLOB

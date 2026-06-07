@@ -74,6 +74,11 @@ type Store interface {
 	UpsertNodes(nodes []Node) (int64, error)
 	// GetNode devuelve un nodo por id (nil, nil si no existe).
 	GetNode(id string) (*Node, error)
+	// SetNodeSummary reescribe el resumen de un nodo y lo marca Pinned (escrito a
+	// mano por el agente/humano), de modo que `nem index` no lo regenere.
+	SetNodeSummary(id, summary string) error
+	// PinnedNodes devuelve los nodos con resumen Pinned (para respetarlos en Build).
+	PinnedNodes() ([]Node, error)
 	// ChildNodes devuelve los hijos directos de un nodo (orden por CreatedAt).
 	ChildNodes(parentID string) ([]Node, error)
 	// RootNodes devuelve los nodos raíz (ParentID == "").

@@ -83,7 +83,7 @@ func printNode(cmd *cobra.Command, store db.Store, n db.Node, level, depth int, 
 	indent := strings.Repeat("  ", level)
 	id := n.ID
 	line := fmt.Sprintf("%s- [%s] %s", indent, n.Kind, n.Title)
-	if s := strings.TrimSpace(n.Summary); s != "" && n.Kind != "project" {
+	if s := strings.TrimSpace(n.Summary); s != "" {
 		line += "  — " + s
 	}
 	fmt.Fprintf(cmd.OutOrStdout(), "%s  (%s)\n", line, id)

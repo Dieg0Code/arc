@@ -39,7 +39,9 @@ type Report struct {
 
 // Builder construye/refresca el árbol de índice.
 type Builder interface {
-	// Build reconstruye el árbol completo (borra y regenera). Idempotente.
+	// Build refresca el árbol (project → chat → commit). Es INCREMENTAL: reusa
+	// los resúmenes y embeddings que ya existen y solo computa lo nuevo/cambiado
+	// (chats sin resumen, commits nuevos), salvo que se use WithForce. Idempotente.
 	Build() (*Report, error)
 }
 
@@ -50,6 +52,7 @@ type config struct {
 	summary  SummaryFunc
 	embedder embed.Embedder
 	progress ProgressFunc
+	force    bool
 }
 
 // Option configura al Builder.
@@ -103,6 +106,16 @@ func WithProgress(fn ProgressFunc) Option {
 	}
 }
 
+// WithForce fuerza recomputar TODOS los resúmenes y embeddings, ignorando los
+// que ya existen. Sin esto, Build es incremental: reusa el trabajo previo y solo
+// calcula lo nuevo/cambiado (chats sin resumen, commits nuevos).
+func WithForce(force bool) Option {
+	return func(c *config) error {
+		c.force = force
+		return nil
+	}
+}
+
 // WithEmbedder activa la capa de embeddings: tras construir el árbol, embebe los
 // resúmenes de los nodos y los guarda. Si el backend falla, el índice igual se
 // construye (los embeddings simplemente no se generan).
@@ -133,6 +146,7 @@ type builder struct {
 	summary  SummaryFunc
 	embedder embed.Embedder
 	progress ProgressFunc
+	force    bool
 }
 
 // New crea un Builder sobre el store dado.
@@ -146,79 +160,159 @@ func New(store db.Store, options ...Option) (Builder, error) {
 			return nil, fmt.Errorf("failed to apply index option: %w", err)
 		}
 	}
-	return &builder{store: store, summary: cfg.summary, embedder: cfg.embedder, progress: cfg.progress}, nil
+	return &builder{store: store, summary: cfg.summary, embedder: cfg.embedder, progress: cfg.progress, force: cfg.force}, nil
 }
 
-// Build hace un rebuild completo: project → chat → commit.
+// Build refresca el árbol (project → chat → commit) de forma incremental.
 func (b *builder) Build() (*Report, error) {
 	chats, err := b.store.ListChats()
 	if err != nil {
 		return nil, err
 	}
+
+	// Resúmenes Pinned (escritos por el agente/humano): nunca se auto-pisan, ni
+	// siquiera con --force. Es la capa mutable sobre los commits inmutables.
+	pinned := map[string]string{}
+	if pn, e := b.store.PinnedNodes(); e == nil {
+		for _, n := range pn {
+			pinned[n.ID] = n.Summary
+		}
+	}
+
+	// Snapshot de los resúmenes ya existentes ANTES de limpiar: así reusamos el
+	// trabajo hecho (chats) y detectamos si un resumen de proyecto cambió, en vez
+	// de re-llamar al LLM o re-embeber por gusto.
+	prevSummary := map[string]string{}
+	if !b.force {
+		for _, chat := range chats {
+			if n, e := b.store.GetNode("chat:" + chat.ID); e == nil && n != nil && strings.TrimSpace(n.Summary) != "" {
+				prevSummary[chat.ID] = n.Summary
+			}
+		}
+	}
+	prevProj := map[string]string{}
+	for _, chat := range chats {
+		pid := "project:" + projectKey(chat.Title)
+		if _, ok := prevProj[pid]; !ok {
+			if n, e := b.store.GetNode(pid); e == nil && n != nil {
+				prevProj[pid] = n.Summary
+			}
+		}
+	}
+	// Cuántos chats necesitan resumen de verdad (para el progreso "N/total").
+	todo := 0
+	for _, chat := range chats {
+		id := "chat:" + chat.ID
+		if _, p := pinned[id]; p {
+			continue
+		}
+		if _, ok := prevSummary[chat.ID]; !ok {
+			todo++
+		}
+	}
+
 	if err := b.store.ClearNodes(); err != nil {
 		return nil, err
 	}
 
 	rep := &Report{}
 	var nodes []db.Node
-	seenProject := map[string]bool{}
+	projPos := map[string]int{}           // projID → posición en nodes (para sintetizar su resumen al final)
+	projChatSums := map[string][]string{} // projID → resúmenes de sus chats
+	fresh := map[string]bool{}            // node IDs cuyo contenido es nuevo/cambiado (para re-embeber)
+	done := 0
 
-	for i, chat := range chats {
-		if b.progress != nil {
-			b.progress("summarize", i+1, len(chats))
-		}
+	for _, chat := range chats {
 		proj := projectKey(chat.Title)
 		projID := "project:" + proj
-		if !seenProject[projID] {
-			seenProject[projID] = true
+		if _, seen := projPos[projID]; !seen {
 			nodes = append(nodes, db.Node{
 				ID:        projID,
 				ParentID:  "",
 				Kind:      "project",
 				Title:     proj,
-				Summary:   "Project: " + proj,
+				Summary:   "Project: " + proj, // placeholder; se sintetiza al final
 				CreatedAt: chat.CreatedAt,
 			})
+			projPos[projID] = len(nodes) - 1
 			rep.Projects++
 		}
 
-		// Chat node: resumen desde los primeros mensajes de conversación.
-		first, err := b.store.MessagesBySeqRange(chat.ID, 1, 8, []string{"user", "assistant"})
-		if err != nil {
-			return nil, err
+		// Chat node: pinned > resumen previo (reuso) > generar.
+		chatNodeID := "chat:" + chat.ID
+		summary, isPinned := pinned[chatNodeID]
+		if !isPinned {
+			var ok bool
+			summary, ok = prevSummary[chat.ID]
+			if !ok {
+				// Solo acá tocamos el summarizer (y leemos los primeros mensajes).
+				first, err := b.store.MessagesBySeqRange(chat.ID, 1, 8, []string{"user", "assistant"})
+				if err != nil {
+					return nil, err
+				}
+				done++
+				if b.progress != nil {
+					b.progress("summarize", done, todo)
+				}
+				summary = truncate(b.summary(chat, first), maxSummaryChars)
+				fresh[chatNodeID] = true // cambió → re-embeber
+			}
 		}
 		nodes = append(nodes, db.Node{
-			ID:         "chat:" + chat.ID,
+			ID:         chatNodeID,
 			ParentID:   projID,
 			Kind:       "chat",
 			ChatID:     chat.ID,
 			Title:      chatTitle(chat),
-			Summary:    truncate(b.summary(chat, first), maxSummaryChars),
+			Summary:    summary,
 			CreatedAt:  chat.CreatedAt,
 			MsgFromSeq: 1,
+			Pinned:     isPinned,
 		})
+		projChatSums[projID] = append(projChatSums[projID], summary)
 		rep.Chats++
 
-		// Commit nodes: el mensaje del commit ES el resumen (gratis).
+		// Commit nodes: el mensaje del commit ES el resumen (gratis), salvo pinned.
 		commits, err := b.store.ListCommits(chat.ID)
 		if err != nil {
 			return nil, err
 		}
 		for _, c := range commits {
 			fromSeq, toSeq := b.commitRange(chat.ID, c)
+			commitNodeID := "commit:" + c.Hash
+			cSummary, cPinned := pinned[commitNodeID]
+			if !cPinned {
+				cSummary = truncate(c.Message, maxSummaryChars)
+			}
 			nodes = append(nodes, db.Node{
-				ID:         "commit:" + c.Hash,
-				ParentID:   "chat:" + chat.ID,
+				ID:         commitNodeID,
+				ParentID:   chatNodeID,
 				Kind:       "commit",
 				ChatID:     chat.ID,
 				Title:      firstLine(c.Message, 70),
-				Summary:    truncate(c.Message, maxSummaryChars),
+				Summary:    cSummary,
 				CommitHash: c.Hash,
 				MsgFromSeq: fromSeq,
 				MsgToSeq:   toSeq,
 				CreatedAt:  c.CreatedAt,
+				Pinned:     cPinned,
 			})
 			rep.Commits++
+		}
+	}
+
+	// Resumen de proyecto: sintetizado de sus chats (mejor que "Project: X"),
+	// salvo que esté pinned. Solo se marca fresh si cambió respecto al previo.
+	for projID, pos := range projPos {
+		if ps, ok := pinned[projID]; ok {
+			nodes[pos].Summary = ps
+			nodes[pos].Pinned = true
+			continue
+		}
+		s := projectSummary(nodes[pos].Title, projChatSums[projID])
+		nodes[pos].Summary = s
+		if prevProj[projID] != s {
+			fresh[projID] = true
 		}
 	}
 
@@ -228,31 +322,81 @@ func (b *builder) Build() (*Report, error) {
 	rep.Nodes = len(nodes)
 
 	if b.embedder != nil {
-		if b.progress != nil {
-			b.progress("embed", len(nodes), len(nodes))
-		}
-		rep.Embedded = b.embedNodes(nodes)
+		rep.Embedded = b.embedNodes(nodes, fresh)
 	}
 	return rep, nil
 }
 
-// embedNodes embebe los resúmenes de los nodos y los guarda. Devuelve cuántos se
-// guardaron (0 si el backend falla; el árbol ya quedó construido igual).
-func (b *builder) embedNodes(nodes []db.Node) int {
-	texts := make([]string, len(nodes))
-	for i, n := range nodes {
-		texts[i] = strings.TrimSpace(n.Title + "\n" + n.Summary)
-	}
-	vecs, err := b.embedder.Embed(context.Background(), texts)
-	if err != nil || len(vecs) != len(nodes) {
-		return 0
-	}
-	embs := make([]db.Embedding, 0, len(nodes))
-	for i, v := range vecs {
-		if len(v) == 0 {
+// projectSummary sintetiza el resumen de un proyecto a partir de los resúmenes de
+// sus chats (mucho más útil que "Project: X" para navegar y para los embeddings).
+func projectSummary(title string, chatSums []string) string {
+	seen := map[string]bool{}
+	var parts []string
+	for _, s := range chatSums {
+		s = strings.TrimSpace(s)
+		if s == "" || seen[s] {
 			continue
 		}
-		embs = append(embs, db.Embedding{NodeID: nodes[i].ID, Dim: len(v), Vec: embed.Encode(v)})
+		seen[s] = true
+		parts = append(parts, s)
+	}
+	if len(parts) == 0 {
+		return "Project: " + title
+	}
+	head := fmt.Sprintf("%d chats. ", len(chatSums))
+	if len(chatSums) == 1 {
+		head = "1 chat. "
+	}
+	return truncate(head+strings.Join(parts, " · "), maxSummaryChars)
+}
+
+// embedNodes embebe los resúmenes de los nodos de forma incremental: reusa los
+// embeddings existentes y solo recomputa los nodos nuevos o cuyo resumen cambió
+// (marcados en fresh). Devuelve cuántos quedaron guardados. Si el backend falla,
+// conserva los embeddings previos (el árbol ya quedó construido igual).
+func (b *builder) embedNodes(nodes []db.Node, fresh map[string]bool) int {
+	prev, _ := b.store.AllEmbeddings()
+	have := make(map[string]db.Embedding, len(prev))
+	for _, e := range prev {
+		have[e.NodeID] = e
+	}
+
+	// Qué nodos hay que embeber: los que no tienen embedding o cuyo texto cambió.
+	var idx []int
+	var texts []string
+	for i, n := range nodes {
+		if _, ok := have[n.ID]; !ok || fresh[n.ID] || b.force {
+			idx = append(idx, i)
+			texts = append(texts, strings.TrimSpace(n.Title+"\n"+n.Summary))
+		}
+	}
+
+	newVecs := map[string][]float32{}
+	if len(texts) > 0 {
+		if b.progress != nil {
+			b.progress("embed", len(texts), len(texts))
+		}
+		vecs, err := b.embedder.Embed(context.Background(), texts)
+		if err != nil || len(vecs) != len(texts) {
+			return len(prev) // backend caído: conservamos lo que había
+		}
+		for j, i := range idx {
+			newVecs[nodes[i].ID] = vecs[j]
+		}
+	}
+
+	// Set final: embedding nuevo si lo recomputamos, si no el previo (reuso).
+	// Recorrer nodes (no prev) descarta de paso embeddings de nodos borrados.
+	embs := make([]db.Embedding, 0, len(nodes))
+	for _, n := range nodes {
+		if v, ok := newVecs[n.ID]; ok {
+			if len(v) == 0 {
+				continue
+			}
+			embs = append(embs, db.Embedding{NodeID: n.ID, Dim: len(v), Vec: embed.Encode(v)})
+		} else if e, ok := have[n.ID]; ok {
+			embs = append(embs, e)
+		}
 	}
 	_ = b.store.ClearEmbeddings()
 	n, _ := b.store.UpsertEmbeddings(embs)

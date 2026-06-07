@@ -15,6 +15,7 @@ import (
 
 	"github.com/Dieg0Code/nem/internal/config"
 	"github.com/Dieg0Code/nem/internal/db"
+	"github.com/Dieg0Code/nem/internal/embed"
 	"github.com/Dieg0Code/nem/internal/index"
 	"github.com/Dieg0Code/nem/internal/output"
 	"github.com/Dieg0Code/nem/internal/retrieve"
@@ -66,6 +67,10 @@ func newServer(store db.Store, version string) *mcp.Server {
 		Name:        "nem_commit",
 		Description: "Persist context: snapshot the last N messages of a chat as an immutable commit with a message you write. Closes the memory write-loop.",
 	}, h.commit)
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "nem_annotate",
+		Description: "Rewrite a node's summary when the auto-generated one is wrong or thin (node ids: project:foo, chat:id, commit:hash). Your summary is pinned and survives re-index — the mutable layer over immutable commits.",
+	}, h.annotate)
 
 	return server
 }
@@ -152,7 +157,7 @@ func (h *handlers) walk(b *strings.Builder, n db.Node, level, depth int, allowed
 	}
 	indent := strings.Repeat("  ", level)
 	fmt.Fprintf(b, "%s- [%s] %s", indent, n.Kind, n.Title)
-	if s := strings.TrimSpace(n.Summary); s != "" && n.Kind != "project" {
+	if s := strings.TrimSpace(n.Summary); s != "" {
 		fmt.Fprintf(b, " — %s", s)
 	}
 	fmt.Fprintf(b, "  (%s)\n", n.ID)
@@ -438,6 +443,36 @@ func (h *handlers) commit(ctx context.Context, _ *mcp.CallToolRequest, in commit
 		return nil, none{}, err
 	}
 	return textResult(fmt.Sprintf("commit %s: %q (%d messages)", short(commit.Hash), in.Message, len(msgs))), none{}, nil
+}
+
+// --- annotate ---
+
+type annotateIn struct {
+	NodeID  string `json:"node_id" jsonschema:"the node to annotate (project:foo, chat:id, commit:hash)"`
+	Summary string `json:"summary" jsonschema:"the summary you write; replaces the auto-generated one and survives re-index"`
+}
+
+func (h *handlers) annotate(ctx context.Context, _ *mcp.CallToolRequest, in annotateIn) (*mcp.CallToolResult, none, error) {
+	if strings.TrimSpace(in.Summary) == "" {
+		return nil, none{}, fmt.Errorf("summary is required")
+	}
+	node, err := h.store.GetNode(in.NodeID)
+	if err != nil {
+		return nil, none{}, err
+	}
+	if node == nil {
+		return nil, none{}, fmt.Errorf("node %q not found (run nem_index?)", in.NodeID)
+	}
+	if err := h.store.SetNodeSummary(in.NodeID, in.Summary); err != nil {
+		return nil, none{}, err
+	}
+	// Re-embeber este nodo si la capa semántica está activa (best-effort).
+	if emb, e := embed.FromConfig(); e == nil && emb != nil {
+		if vecs, e := emb.Embed(ctx, []string{strings.TrimSpace(node.Title + "\n" + in.Summary)}); e == nil && len(vecs) == 1 && len(vecs[0]) > 0 {
+			_, _ = h.store.UpsertEmbeddings([]db.Embedding{{NodeID: in.NodeID, Dim: len(vecs[0]), Vec: embed.Encode(vecs[0])}})
+		}
+	}
+	return textResult(fmt.Sprintf("annotated %s (pinned; survives re-index)", in.NodeID)), none{}, nil
 }
 
 // --- helpers ---

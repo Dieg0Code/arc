@@ -17,21 +17,26 @@ func newIndexCmd() *cobra.Command {
 		backend  string
 		model    string
 		endpoint string
+		force    bool
 	)
 	cmd := &cobra.Command{
 		Use:   "index",
 		Short: "Build/refresh the navigable index tree (project → chat → commit)",
+		Long: "Build/refresh the navigable index tree (project → chat → commit).\n" +
+			"Incremental by default: reuses existing summaries/embeddings and only\n" +
+			"computes what's new (new chats, new commits). Use --force to redo all.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runIndex(cmd, backend, model, endpoint)
+			return runIndex(cmd, backend, model, endpoint, force)
 		},
 	}
 	cmd.Flags().StringVar(&backend, "summarize", "", "summary backend: heuristic | ollama | api (default: config or heuristic)")
 	cmd.Flags().StringVar(&model, "model", "", "model for ollama/api (overrides config)")
 	cmd.Flags().StringVar(&endpoint, "endpoint", "", "endpoint for ollama/api (overrides config)")
+	cmd.Flags().BoolVar(&force, "force", false, "recompute all summaries/embeddings, ignoring existing work")
 	return cmd
 }
 
-func runIndex(cmd *cobra.Command, backend, model, endpoint string) error {
+func runIndex(cmd *cobra.Command, backend, model, endpoint string, force bool) error {
 	store, err := openStore()
 	if err != nil {
 		return err
@@ -41,6 +46,9 @@ func runIndex(cmd *cobra.Command, backend, model, endpoint string) error {
 	opts, err := indexOpts(backend, model, endpoint)
 	if err != nil {
 		return err
+	}
+	if force {
+		opts = append(opts, index.WithForce(true))
 	}
 	// Progreso en stderr (stdout queda limpio para el reporte final).
 	errw := cmd.ErrOrStderr()

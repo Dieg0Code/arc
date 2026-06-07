@@ -29,7 +29,7 @@ func (s *store) UpsertNodes(nodes []Node) (int64, error) {
 		DoUpdates: clause.AssignmentColumns([]string{
 			"parent_id", "kind", "chat_id", "title", "summary",
 			"msg_from_seq", "msg_to_seq", "commit_hash", "created_at",
-			"tokens", "superseded", "superseded_by",
+			"tokens", "superseded", "superseded_by", "pinned",
 		}),
 	}).CreateInBatches(nodes, insertBatchSize)
 	if tx.Error != nil {
@@ -49,6 +49,32 @@ func (s *store) GetNode(id string) (*Node, error) {
 		return nil, fmt.Errorf("failed to get node %s: %w", id, err)
 	}
 	return &n, nil
+}
+
+// SetNodeSummary reescribe el resumen de un nodo y lo marca como Pinned (escrito
+// por el agente/humano), de modo que un re-index no lo vuelva a generar. Es la
+// capa mutable: el agente corrige resúmenes flojos o equivocados. Error si el
+// nodo no existe.
+func (s *store) SetNodeSummary(id, summary string) error {
+	res := s.gdb.Model(&Node{}).Where("id = ?", id).
+		Updates(map[string]any{"summary": summary, "pinned": true})
+	if res.Error != nil {
+		return fmt.Errorf("failed to set summary for node %s: %w", id, res.Error)
+	}
+	if res.RowsAffected == 0 {
+		return fmt.Errorf("node %s not found", id)
+	}
+	return nil
+}
+
+// PinnedNodes devuelve los nodos con resumen escrito a mano (Pinned), para que
+// Build los respete en vez de regenerarlos.
+func (s *store) PinnedNodes() ([]Node, error) {
+	var nodes []Node
+	if err := s.gdb.Where("pinned = ?", true).Find(&nodes).Error; err != nil {
+		return nil, fmt.Errorf("failed to load pinned nodes: %w", err)
+	}
+	return nodes, nil
 }
 
 // ChildNodes devuelve los hijos directos de un nodo, ordenados por CreatedAt.
