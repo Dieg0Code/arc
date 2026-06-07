@@ -1,109 +1,102 @@
+<div align="center">
+
 # nem
 
-> Your agent forgets. nem doesn't.
+**Your agent forgets. nem doesn't.**
 
-`nem` versions **agent context** the way git versions code. When an LLM compacts
-its context window, it discards reasoning, resolved edge-cases, and prior
-decisions. nem persists that context explicitly, makes it searchable and
-portable across agents and machines — and the agent uses it with the same
-commands a human would.
+nem versions agent context the way git versions code.
 
-## Features
+[![Go Report Card](https://goreportcard.com/badge/github.com/Dieg0Code/nem)](https://goreportcard.com/report/github.com/Dieg0Code/nem)
+[![CI](https://img.shields.io/github/actions/workflow/status/Dieg0Code/nem/ci.yml?branch=main)](https://github.com/Dieg0Code/nem/actions)
+[![codecov](https://codecov.io/gh/Dieg0Code/nem/graph/badge.svg)](https://codecov.io/gh/Dieg0Code/nem)
+[![Go Reference](https://pkg.go.dev/badge/github.com/Dieg0Code/nem.svg)](https://pkg.go.dev/github.com/Dieg0Code/nem)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/Dieg0Code/nem)](https://github.com/Dieg0Code/nem/releases)
 
-- **Ingests** **Codex** and **Claude Code** sessions (conversation + reasoning +
-  tool calls, with tool outputs truncated so they don't burn tokens).
-- **Immutable commits**: each commit copies the text of the range (a snapshot),
-  not a pointer — what you saved never changes.
-- **Full-text search** with BM25 ranking (SQLite FTS5), prioritizing
-  conversation over tool noise.
-- **Git-based sync** with automatic **secret redaction**: API keys and tokens
-  (OpenAI, Anthropic, HuggingFace, AWS, GitHub, GitLab, Stripe, wandb, …),
-  connection strings, `Authorization` headers, and sensitive env vars are masked
-  **before anything leaves your machine**.
-- **Agent skill**: `nem init` installs a `SKILL.md` into Claude Code and Codex so
-  the agent knows when and how to use nem on its own.
-- **Single binary**, SQLite embedded in **pure Go** (no cgo) → a static
-  executable. Works offline.
+</div>
 
-## Stack
+---
 
-Go · [GORM](https://gorm.io) over [`glebarez/sqlite`](https://github.com/glebarez/sqlite)
-(modernc, no cgo) · SQLite FTS5/BM25 · [cobra](https://github.com/spf13/cobra) ·
-git (via `os/exec`).
+When an LLM compacts its context window it throws away the reasoning, the
+resolved edge-cases, the decisions. nem persists that context as **immutable,
+searchable commits** — and your agent recalls and writes them with the same
+commands you would. Single binary, SQLite embedded in pure Go (no cgo), offline.
 
 ## Install
 
-**Windows (Scoop):**
 ```powershell
+# Windows (Scoop)
 scoop bucket add Dieg0Code https://github.com/Dieg0Code/scoop-bucket
 scoop install nem
 ```
-
-**macOS / Linux (Homebrew):**
 ```bash
+# macOS / Linux (Homebrew)
 brew install Dieg0Code/homebrew-tap/nem
-```
 
-**With Go:**
-```bash
+# or with Go
 go install github.com/Dieg0Code/nem/cmd/nem@latest
 ```
 
-**Prebuilt binaries:** download the archive for your OS/arch from the
-[Releases](https://github.com/Dieg0Code/nem/releases) page and put `nem` on your `PATH`.
+## How your agent uses it
 
-**From source:**
-```bash
-go build -o nem ./cmd/nem
-```
-
-## Usage (MVP)
+`nem init` installs a skill into Claude Code and Codex. The agent **recalls** at
+the start of a session and **persists** what it resolves — no human in the loop:
 
 ```bash
-nem init                          # creates ~/.nem + git, installs the agent skill
-nem ingest                        # ingest Codex and Claude (or: nem ingest codex)
-nem status                        # active session + uncommitted messages
-
-nem add -L 20                     # stage the last 20 messages
-nem add --from <msgID> --to <id>  # ...or an exact range
-nem commit -m "decision about X"  # immutable snapshot
-
-nem log                           # commit history
-nem read HEAD --format llm        # the commit, clean for an agent
-nem search "decay" --format llm   # BM25 search (--role all includes tools)
-
-nem remote add origin <url>       # configure the remote
-nem sync                          # export (redacting) → git push → import
-nem clone <url>                   # clone the store on another machine
+nem outline                         # the map: project → chat → commit, summarized
+nem search "<terms>" --format llm   # hybrid search (BM25 + semantic)
+nem read <hash> --format llm        # a frozen snapshot, clean for an agent
+nem commit -m "decision about X"    # persist a resolved decision (immutable)
 ```
 
-### Output formats
+The agent navigates the tree, reads what matters, and writes its own commits.
+You stay in control of one thing: `nem sync` (sharing) is yours.
 
-`read` and `search` accept `--format`:
-- `llm` — clean, no metadata, for agent ingestion
-- `json` — structured
-- `markdown` — human-readable (default)
+## Commands
 
-## The agent skill
+| | |
+|---|---|
+| `nem init` / `ingest` | set up `~/.nem`; pull in Codex & Claude Code sessions |
+| `nem status` / `log` | active session; commit history |
+| `nem add` / `commit` | stage messages; freeze them into an immutable snapshot |
+| `nem outline` / `timeline` | navigate the index tree; see how decisions evolved |
+| `nem search` / `read` | hybrid retrieval (keyword/semantic); drill into content |
+| `nem annotate` | rewrite a node's summary (pinned; survives re-index) |
+| `nem index` | (re)build the tree — incremental, only computes what's new |
+| `nem sync` / `clone` | push/pull to a git remote, **redacting secrets first** |
+| `nem doctor` | check/install the optional pro deps |
 
-`nem init` installs a `SKILL.md` into the agents present on your machine
-(`~/.claude/skills/nem/` and `~/.codex/skills/nem/`). It teaches the agent to
-**recall** prior context at the start of a session (`nem status` / `nem search` /
-`nem read HEAD`) and to **persist** resolved decisions (`nem add` + `nem commit`,
-writing its own commit message). `nem sync` stays in your hands.
+## How it works
+
+- **Immutable commits** — a commit copies the *text* of its range (a snapshot),
+  not a pointer. What you saved never changes.
+- **Navigable index** — a PageIndex-style tree (project → chat → commit) with
+  summaries the agent reasons over before drilling in. The agent is the reranker.
+- **Hybrid search** — BM25 (SQLite FTS5) over messages + nodes, fused (RRF) with a
+  recency boost and optional semantic embeddings.
+- **Mutable summary layer** — `nem annotate` lets the agent curate how a commit is
+  described and found, without touching the immutable content.
+
+## Optional: the semantic layer
+
+Richer LLM summaries and embeddings are opt-in and run locally (Ollama) or via an
+OpenAI-compatible API — nem's core stays embedding-free and pure Go.
 
 ```bash
-nem init --no-skill    # skip skill installation
-nem skill install      # (re)install the skill later, e.g. after upgrading nem
+nem config set embed.backend ollama       # turn on the semantic layer
+nem doctor --fix                          # installs Ollama + pulls the models
+nem index                                 # build summaries + embeddings
 ```
 
-nem only ever owns the `nem` skill directory — it never touches your other skills.
+MCP: `nem mcp` exposes the same capabilities as typed tools
+(`nem_outline`, `nem_search`, `nem_read`, `nem_annotate`, …) for agents that
+speak MCP.
 
-## Security: secret redaction
+## Security
 
-Scrubbing runs **only on `nem sync`** (the one boundary where content leaves your
-machine). The local DB keeps the raw text — just like `~/.codex` and `~/.claude`
-already do — so ingesting adds no new exposure. `nem sync` redacts and reports:
+Secret redaction runs **only on `nem sync`** — the one boundary where content
+leaves your machine. API keys, tokens, connection strings, `Authorization`
+headers and sensitive env vars are masked before anything is pushed, and reported:
 
 ```
 $ nem sync
@@ -112,33 +105,16 @@ redacted 7 secrets: 5 huggingface-token, 2 env-secret
 synced with the remote
 ```
 
-## Architecture
-
-```
-cmd/nem/            entrypoint
-internal/
-  cli/              cobra commands
-  config/           paths (~/.nem, nem.db, store/)
-  db/               GORM models + Store (interface) + FTS5
-  ingest/           codex/claude parsers (Parser interface)
-  session/          active-session detection
-  output/           snapshots + llm/json/markdown formats
-  redact/           secret detection and masking
-  skill/            embedded SKILL.md + installer
-  sync/             JSONL export/import + git
-```
-
-Every component follows the **interface + functional options** pattern:
-`New*(...) (Interface, error)` returns the interface, which makes testing with
-mocks trivial.
-
 ## Development
 
 ```bash
-go test ./...        # full suite
+go test ./...
 go vet ./...
 ```
 
-The race detector (`go test -race`) requires cgo. On Windows run the tests from
-**PowerShell** (not Git Bash, which DLL-shadows the mingw toolchain). In CI it
-runs on Linux (`.github/workflows/ci.yml`).
+`-race` needs cgo; on Windows run from PowerShell (Git Bash DLL-shadows mingw).
+CI runs race + coverage on Linux.
+
+## License
+
+[MIT](LICENSE)

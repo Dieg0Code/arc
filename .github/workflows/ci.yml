@@ -17,4 +17,11 @@ jobs:
         run: go vet ./...
       - name: test (race + coverage)
         # En Linux cgo+gcc funcionan, así que el race detector corre acá.
-        run: go test -race -coverprofile=coverage.out ./...
+        run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
+      - name: upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage.out
+          slug: Dieg0Code/nem
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
