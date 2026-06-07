@@ -1,0 +1,153 @@
+// Package session detecta la sesión de agente activa: el archivo de sesión más
+// recientemente modificado entre Codex y Claude Code.
+package session
+
+import (
+	"errors"
+	"fmt"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
+	"time"
+)
+
+// Session identifica una sesión de agente detectada.
+type Session struct {
+	ChatID  string
+	Source  string // "codex" | "claude"
+	Path    string
+	ModTime time.Time
+}
+
+// Detector resuelve la sesión activa.
+type Detector interface {
+	// Detect devuelve la sesión activa, o (nil, nil) si no encuentra ninguna.
+	Detect() (*Session, error)
+}
+
+type config struct {
+	codexRoot  string
+	claudeRoot string
+}
+
+// Option configura el Detector.
+type Option func(*config) error
+
+// WithCodexRoot fuerza el root de sesiones de Codex (default ~/.codex/sessions).
+func WithCodexRoot(root string) Option {
+	return func(c *config) error {
+		if root == "" {
+			return errors.New("codex root cannot be empty")
+		}
+		c.codexRoot = root
+		return nil
+	}
+}
+
+// WithClaudeRoot fuerza el root de sesiones de Claude (default ~/.claude/projects).
+func WithClaudeRoot(root string) Option {
+	return func(c *config) error {
+		if root == "" {
+			return errors.New("claude root cannot be empty")
+		}
+		c.claudeRoot = root
+		return nil
+	}
+}
+
+type detector struct {
+	codexRoot  string
+	claudeRoot string
+}
+
+// NewDetector crea un Detector. Por defecto usa ~/.codex/sessions y
+// ~/.claude/projects.
+func NewDetector(options ...Option) (Detector, error) {
+	cfg := &config{}
+	for _, option := range options {
+		if err := option(cfg); err != nil {
+			return nil, fmt.Errorf("failed to apply session option: %w", err)
+		}
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve home directory: %w", err)
+	}
+	if cfg.codexRoot == "" {
+		cfg.codexRoot = filepath.Join(home, ".codex", "sessions")
+	}
+	if cfg.claudeRoot == "" {
+		cfg.claudeRoot = filepath.Join(home, ".claude", "projects")
+	}
+	return &detector{codexRoot: cfg.codexRoot, claudeRoot: cfg.claudeRoot}, nil
+}
+
+var uuidRE = regexp.MustCompile(`([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})`)
+
+// Detect compara el .jsonl más reciente de Codex y de Claude y devuelve el más
+// nuevo como la sesión activa.
+func (d *detector) Detect() (*Session, error) {
+	codex := newest(d.codexRoot)
+	claude := newest(d.claudeRoot)
+
+	var best *fileHit
+	var source string
+	if codex != nil {
+		best, source = codex, "codex"
+	}
+	if claude != nil && (best == nil || claude.modTime.After(best.modTime)) {
+		best, source = claude, "claude"
+	}
+	if best == nil {
+		return nil, nil
+	}
+
+	return &Session{
+		ChatID:  chatIDFromPath(best.path, source),
+		Source:  source,
+		Path:    best.path,
+		ModTime: best.modTime,
+	}, nil
+}
+
+type fileHit struct {
+	path    string
+	modTime time.Time
+}
+
+// newest devuelve el .jsonl más recientemente modificado bajo root, o nil.
+func newest(root string) *fileHit {
+	var best *fileHit
+	_ = filepath.WalkDir(root, func(path string, dirent fs.DirEntry, err error) error {
+		if err != nil || dirent.IsDir() {
+			return nil
+		}
+		if !strings.EqualFold(filepath.Ext(path), ".jsonl") {
+			return nil
+		}
+		info, err := dirent.Info()
+		if err != nil {
+			return nil
+		}
+		if best == nil || info.ModTime().After(best.modTime) {
+			best = &fileHit{path: path, modTime: info.ModTime()}
+		}
+		return nil
+	})
+	return best
+}
+
+// chatIDFromPath deriva el chat id del path del archivo, consistente con los
+// parsers: UUID del nombre para Codex; nombre sin extensión (sessionId) para
+// Claude.
+func chatIDFromPath(path, source string) string {
+	base := filepath.Base(path)
+	if source == "codex" {
+		if m := uuidRE.FindString(base); m != "" {
+			return m
+		}
+	}
+	return strings.TrimSuffix(base, filepath.Ext(base))
+}

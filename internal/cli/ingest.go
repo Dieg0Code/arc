@@ -1,0 +1,61 @@
+package cli
+
+import (
+	"fmt"
+
+	"github.com/Dieg0Code/arc/internal/ingest"
+	"github.com/spf13/cobra"
+)
+
+// newIngestCmd crea `arc ingest [codex|claude]`. Sin argumento ingesta ambos.
+func newIngestCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:       "ingest [codex|claude]",
+		Short:     "Ingest Codex and/or Claude Code sessions into the arc store",
+		Args:      cobra.MaximumNArgs(1),
+		ValidArgs: []string{"codex", "claude"},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runIngest(cmd, args)
+		},
+	}
+}
+
+func runIngest(cmd *cobra.Command, args []string) error {
+	store, err := openStore()
+	if err != nil {
+		return err
+	}
+	defer store.Close()
+
+	var parsers []ingest.Parser
+	switch {
+	case len(args) == 0:
+		parsers = []ingest.Parser{ingest.NewCodexParser(), ingest.NewClaudeParser()}
+	case args[0] == "codex":
+		parsers = []ingest.Parser{ingest.NewCodexParser()}
+	case args[0] == "claude":
+		parsers = []ingest.Parser{ingest.NewClaudeParser()}
+	default:
+		return fmt.Errorf("unknown source %q (use 'codex' or 'claude')", args[0])
+	}
+
+	out := cmd.OutOrStdout()
+	for _, p := range parsers {
+		rep, err := ingest.Ingest(store, p)
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(out, "%s: %d chats, %d new messages (%d files, %d skipped)\n",
+			rep.Source, rep.Chats, rep.Messages, rep.Files, rep.Skipped)
+		if len(rep.Errors) > 0 {
+			fmt.Fprintf(out, "  %d files with errors (first 3):\n", len(rep.Errors))
+			for i, e := range rep.Errors {
+				if i == 3 {
+					break
+				}
+				fmt.Fprintf(out, "    - %s\n", e)
+			}
+		}
+	}
+	return nil
+}

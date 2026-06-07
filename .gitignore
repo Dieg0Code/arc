@@ -1,0 +1,28 @@
+# Binarios compilados
+/arc
+/arc.exe
+/bin/
+
+# Salida de GoReleaser
+/dist/
+
+# Store local de arc (no se versiona el repo de código)
+/.arc/
+
+# Artefactos de test/cobertura
+*.out
+*.test
+coverage.*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Repo de referencia clonado para estudiar convenciones (no es parte de arc)
+/_syndicate_ref/
+
+# Skills de terceros instaladas localmente (no son parte de arc)
+/.agents/
+/skills-lock.json

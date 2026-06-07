@@ -1,0 +1,82 @@
+# GoReleaser config — builds cross-platform static binaries (no cgo) and
+# publishes a GitHub Release + Scoop/Homebrew manifests on each `v*` tag.
+# Docs: https://goreleaser.com
+version: 2
+
+project_name: arc
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: arc
+    main: ./cmd/arc
+    binary: arc
+    env:
+      - CGO_ENABLED=0 # arc es Go puro (modernc sqlite): binario estático
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X github.com/Dieg0Code/arc/internal/cli.version={{ .Version }}
+
+archives:
+  - id: arc
+    formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - README.md
+      - LICENSE
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  sort: asc
+  use: git
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "Merge pull request"
+
+# Windows: scoop install arc (tras: scoop bucket add arc https://github.com/Dieg0Code/scoop-bucket)
+scoops:
+  - repository:
+      owner: Dieg0Code
+      name: scoop-bucket
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+    homepage: https://github.com/Dieg0Code/arc
+    description: Version your agent's context like git versions code.
+    license: MIT
+
+# macOS/Linux: brew install Dieg0Code/homebrew-tap/arc
+homebrew_casks:
+  - repository:
+      owner: Dieg0Code
+      name: homebrew-tap
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+    homepage: https://github.com/Dieg0Code/arc
+    description: Version your agent's context like git versions code.
+    # Quita la cuarentena de macOS para que el binario sin firmar pueda correr.
+    hooks:
+      post:
+        install: |
+          if system_command("/usr/bin/xattr", args: ["-h"]).exit_status == 0
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/arc"]
+          end
+
+release:
+  github:
+    owner: Dieg0Code
+    name: arc
+  draft: false
