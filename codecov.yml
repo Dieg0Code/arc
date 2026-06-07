@@ -1,0 +1,22 @@
+# Configuración de Codecov para nem. Ref: https://docs.codecov.com/docs/codecov-yaml
+coverage:
+  round: down
+  precision: 1
+  status:
+    project:
+      default:
+        target: auto      # compara contra el commit base
+        threshold: 1%     # tolera caídas chicas sin marcar el check en rojo
+    patch:
+      default:
+        informational: true  # informa la cobertura del diff, pero no bloquea el PR
+
+# Comentario que Codecov deja en cada pull request
+comment:
+  layout: "reach, diff, flags, files"
+  require_changes: false
+
+# Código que no cuenta para la cobertura
+ignore:
+  - "cmd/nem"        # entrypoint delgado (main)
+  - "**/*_test.go"
