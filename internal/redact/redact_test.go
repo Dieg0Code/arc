@@ -39,7 +39,7 @@ func TestRedact_Builtins(t *testing.T) {
 		{"gitlab", "token " + frag("glpat-", "abcdefghij1234567890") + " ok", "gitlab-pat", frag("glpat-", "abcdefghij")},
 		// URI con credenciales armada por fragmentos (sin esquema ni separador
 		// contiguos en el fuente) para que ningún scanner la reconozca; en
-		// runtime arc sí la matchea.
+		// runtime nem sí la matchea.
 		{"conn-string", "db " + "x:" + "//admin:" + frag("s3cr3t", "pass") + "@h:5432/app", "conn-credential", frag("s3cr3t", "pass")},
 		{"authorization", "Authorization: Bearer " + frag("abcdef1234567890", "ghijkl"), "authorization", frag("abcdef1234567890", "ghijkl")},
 	}

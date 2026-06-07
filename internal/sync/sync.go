@@ -1,4 +1,4 @@
-// Package sync exporta los commits de arc a JSONL versionable por git, los
+// Package sync exporta los commits de nem a JSONL versionable por git, los
 // sincroniza con un remoto, y reimporta lo que llega. El scrubbing de secretos
 // corre SIEMPRE en la exportación: es la única frontera por la que el contenido
 // sale de la máquina.
@@ -13,14 +13,14 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/Dieg0Code/arc/internal/db"
-	"github.com/Dieg0Code/arc/internal/output"
-	"github.com/Dieg0Code/arc/internal/redact"
+	"github.com/Dieg0Code/nem/internal/db"
+	"github.com/Dieg0Code/nem/internal/output"
+	"github.com/Dieg0Code/nem/internal/redact"
 )
 
 // gitignoreContent excluye todo lo que no debe versionarse: la DB binaria y la
 // config local. Solo store/ se sincroniza.
-const gitignoreContent = "/arc.db\n/arc.db-*\n/config.toml\n"
+const gitignoreContent = "/nem.db\n/nem.db-*\n/config.toml\n"
 
 // exportHeader es la primera línea de cada archivo de commit exportado.
 type exportHeader struct {
@@ -69,7 +69,7 @@ type config struct {
 // Option configura el Syncer.
 type Option func(*config) error
 
-// WithDir fija el directorio del store (default ~/.arc, vía paths del caller).
+// WithDir fija el directorio del store (default ~/.nem, vía paths del caller).
 func WithDir(dir string) Option {
 	return func(c *config) error {
 		if dir == "" {
@@ -106,7 +106,7 @@ type syncer struct {
 	chatsDir string
 }
 
-// NewSyncer crea un Syncer. dir es obligatorio (raíz del store, p.ej. ~/.arc).
+// NewSyncer crea un Syncer. dir es obligatorio (raíz del store, p.ej. ~/.nem).
 func NewSyncer(store db.Store, options ...Option) (Syncer, error) {
 	if store == nil {
 		return nil, errors.New("store is required")
@@ -148,11 +148,11 @@ func (s *syncer) Sync() (*Report, error) {
 	}
 	report := &Report{Exported: exported, Redacted: counts}
 
-	// add -A versiona store/ y .gitignore; arc.db queda excluido por el ignore.
+	// add -A versiona store/ y .gitignore; nem.db queda excluido por el ignore.
 	if err := s.git.addAll(".gitignore", "store"); err != nil {
 		return nil, err
 	}
-	if _, err := s.git.commit(fmt.Sprintf("arc sync %s", time.Now().Format(time.RFC3339))); err != nil {
+	if _, err := s.git.commit(fmt.Sprintf("nem sync %s", time.Now().Format(time.RFC3339))); err != nil {
 		return nil, err
 	}
 

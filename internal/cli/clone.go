@@ -3,18 +3,18 @@ package cli
 import (
 	"fmt"
 
-	"github.com/Dieg0Code/arc/internal/config"
-	"github.com/Dieg0Code/arc/internal/db"
-	"github.com/Dieg0Code/arc/internal/sync"
+	"github.com/Dieg0Code/nem/internal/config"
+	"github.com/Dieg0Code/nem/internal/db"
+	"github.com/Dieg0Code/nem/internal/sync"
 	"github.com/spf13/cobra"
 )
 
-// newCloneCmd crea `arc clone <url>`: clona el store remoto en ~/.arc e importa
+// newCloneCmd crea `nem clone <url>`: clona el store remoto en ~/.nem e importa
 // los commits a la DB local.
 func newCloneCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "clone <url>",
-		Short: "Clone a remote arc store and import its commits",
+		Short: "Clone a remote nem store and import its commits",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runClone(cmd, args[0])

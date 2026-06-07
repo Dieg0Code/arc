@@ -3,26 +3,26 @@ package cli
 import (
 	"fmt"
 
-	"github.com/Dieg0Code/arc/internal/skill"
+	"github.com/Dieg0Code/nem/internal/skill"
 	"github.com/spf13/cobra"
 )
 
-// newSkillCmd agrupa los subcomandos del agent skill de arc.
+// newSkillCmd agrupa los subcomandos del agent skill de nem.
 func newSkillCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "skill",
-		Short: "Manage the arc agent skill (teaches your agent to use arc)",
+		Short: "Manage the nem agent skill (teaches your agent to use nem)",
 	}
 	cmd.AddCommand(newSkillInstallCmd())
 	return cmd
 }
 
-// newSkillInstallCmd crea `arc skill install`: (re)instala el SKILL.md en los
+// newSkillInstallCmd crea `nem skill install`: (re)instala el SKILL.md en los
 // agentes presentes. Idempotente.
 func newSkillInstallCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "install",
-		Short: "Install the arc agent skill into Claude Code and/or Codex",
+		Short: "Install the nem agent skill into Claude Code and/or Codex",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return installSkill(cmd)
 		},
@@ -30,7 +30,7 @@ func newSkillInstallCmd() *cobra.Command {
 }
 
 // installSkill instala el skill y reporta el resultado. Lo comparten
-// `arc init` y `arc skill install`.
+// `nem init` y `nem skill install`.
 func installSkill(cmd *cobra.Command) error {
 	inst, err := skill.New()
 	if err != nil {

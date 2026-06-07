@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// newLogCmd crea `arc log`: lista los commits del chat activo.
+// newLogCmd crea `nem log`: lista los commits del chat activo.
 func newLogCmd() *cobra.Command {
 	var (
 		graph    bool
@@ -56,7 +56,7 @@ func runLog(cmd *cobra.Command, chatFlag string, graph bool) error {
 	}
 	out := cmd.OutOrStdout()
 	if len(commits) == 0 {
-		fmt.Fprintln(out, "no commits yet (use 'arc add' + 'arc commit')")
+		fmt.Fprintln(out, "no commits yet (use 'nem add' + 'nem commit')")
 		return nil
 	}
 

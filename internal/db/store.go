@@ -1,4 +1,4 @@
-// Package db es la capa de persistencia de arc: modelos GORM sobre SQLite
+// Package db es la capa de persistencia de nem: modelos GORM sobre SQLite
 // (glebarez/sqlite, Go puro, sin cgo) más una capa FTS5 en SQL crudo para
 // búsqueda full-text con ranking BM25.
 package db
@@ -12,7 +12,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-// Store es la interface de acceso a datos de arc. Toda la app depende de esta
+// Store es la interface de acceso a datos de nem. Toda la app depende de esta
 // abstracción, no de GORM directamente, para que los comandos sean testeables
 // con un mock.
 type Store interface {
@@ -115,7 +115,7 @@ type store struct {
 //
 // Ejemplo:
 //
-//	s, err := db.New(db.WithPath("/home/me/.arc/arc.db"))
+//	s, err := db.New(db.WithPath("/home/me/.nem/nem.db"))
 //	if err != nil {
 //	    log.Fatal(err)
 //	}

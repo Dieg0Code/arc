@@ -6,14 +6,14 @@ import (
 	"os"
 	"slices"
 
-	"github.com/Dieg0Code/arc/internal/config"
-	"github.com/Dieg0Code/arc/internal/db"
-	"github.com/Dieg0Code/arc/internal/scope"
-	"github.com/Dieg0Code/arc/internal/session"
+	"github.com/Dieg0Code/nem/internal/config"
+	"github.com/Dieg0Code/nem/internal/db"
+	"github.com/Dieg0Code/nem/internal/scope"
+	"github.com/Dieg0Code/nem/internal/session"
 	"github.com/spf13/cobra"
 )
 
-// openStore abre el Store local de arc. Falla con un mensaje claro si arc no fue
+// openStore abre el Store local de nem. Falla con un mensaje claro si nem no fue
 // inicializado todavía.
 func openStore() (db.Store, error) {
 	dbPath, err := config.DBPath()
@@ -21,11 +21,11 @@ func openStore() (db.Store, error) {
 		return nil, err
 	}
 	if _, err := os.Stat(dbPath); errors.Is(err, os.ErrNotExist) {
-		return nil, errors.New("arc is not initialized on this machine; run 'arc init' first")
+		return nil, errors.New("nem is not initialized on this machine; run 'nem init' first")
 	}
 	store, err := db.New(db.WithPath(dbPath))
 	if err != nil {
-		return nil, fmt.Errorf("failed to open arc store: %w", err)
+		return nil, fmt.Errorf("failed to open nem store: %w", err)
 	}
 	return store, nil
 }
@@ -60,12 +60,12 @@ func shortHash(h string) string {
 }
 
 // activeScopeName resuelve el scope activo: flag --scope, si no la variable de
-// entorno ARC_SCOPE, si no "" (acceso completo).
+// entorno NEM_SCOPE, si no "" (acceso completo).
 func activeScopeName(cmd *cobra.Command) string {
 	if v, err := cmd.Flags().GetString("scope"); err == nil && v != "" {
 		return v
 	}
-	return os.Getenv("ARC_SCOPE")
+	return os.Getenv("NEM_SCOPE")
 }
 
 // resolveScope traduce el scope activo a la lista de chat ids permitidos.

@@ -1,4 +1,4 @@
-// Package config resuelve las rutas del store local de arc (~/.arc) y la
+// Package config resuelve las rutas del store local de nem (~/.nem) y la
 // configuración persistida en config.toml.
 package config
 
@@ -8,25 +8,25 @@ import (
 	"path/filepath"
 )
 
-// Dir devuelve la ruta raíz del store local de arc (~/.arc).
+// Dir devuelve la ruta raíz del store local de nem (~/.nem).
 func Dir() (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", fmt.Errorf("failed to resolve home directory: %w", err)
 	}
-	return filepath.Join(home, ".arc"), nil
+	return filepath.Join(home, ".nem"), nil
 }
 
-// DBPath devuelve la ruta de la base SQLite local (~/.arc/arc.db).
+// DBPath devuelve la ruta de la base SQLite local (~/.nem/nem.db).
 func DBPath() (string, error) {
 	dir, err := Dir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(dir, "arc.db"), nil
+	return filepath.Join(dir, "nem.db"), nil
 }
 
-// ConfigPath devuelve la ruta del archivo de configuración (~/.arc/config.toml).
+// ConfigPath devuelve la ruta del archivo de configuración (~/.nem/config.toml).
 func ConfigPath() (string, error) {
 	dir, err := Dir()
 	if err != nil {
@@ -35,7 +35,7 @@ func ConfigPath() (string, error) {
 	return filepath.Join(dir, "config.toml"), nil
 }
 
-// StoreDir devuelve la ruta del directorio versionado por git (~/.arc/store).
+// StoreDir devuelve la ruta del directorio versionado por git (~/.nem/store).
 func StoreDir() (string, error) {
 	dir, err := Dir()
 	if err != nil {
@@ -45,7 +45,7 @@ func StoreDir() (string, error) {
 }
 
 // ChatsDir devuelve la ruta donde se exportan los .jsonl por commit
-// (~/.arc/store/chats).
+// (~/.nem/store/chats).
 func ChatsDir() (string, error) {
 	store, err := StoreDir()
 	if err != nil {

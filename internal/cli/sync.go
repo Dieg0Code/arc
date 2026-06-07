@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/Dieg0Code/arc/internal/config"
-	"github.com/Dieg0Code/arc/internal/sync"
+	"github.com/Dieg0Code/nem/internal/config"
+	"github.com/Dieg0Code/nem/internal/sync"
 	"github.com/spf13/cobra"
 )
 
-// newSyncCmd crea `arc sync`: exporta los commits (redactando secretos), los
+// newSyncCmd crea `nem sync`: exporta los commits (redactando secretos), los
 // versiona con git y sincroniza con el remoto si está configurado.
 func newSyncCmd() *cobra.Command {
 	return &cobra.Command{
@@ -49,7 +49,7 @@ func runSync(cmd *cobra.Command) error {
 	if rep.Pushed {
 		fmt.Fprintln(out, "synced with the remote")
 	} else {
-		fmt.Fprintln(out, "local commit (no remote; use 'arc remote add origin <url>')")
+		fmt.Fprintln(out, "local commit (no remote; use 'nem remote add origin <url>')")
 	}
 	fmt.Fprintf(out, "imported %d new commits\n", rep.Imported)
 	return nil

@@ -9,7 +9,7 @@ import (
 )
 
 // gitRepo es un wrapper fino sobre `git -C <dir> ...`. El usuario nunca ve git
-// directamente; arc lo maneja por debajo en sync/clone.
+// directamente; nem lo maneja por debajo en sync/clone.
 type gitRepo struct {
 	dir string
 }

@@ -8,7 +8,7 @@ import (
 // newTestStore abre un Store sobre un archivo temporal ya migrado.
 func newTestStore(t *testing.T) *store {
 	t.Helper()
-	path := filepath.Join(t.TempDir(), "arc.db")
+	path := filepath.Join(t.TempDir(), "nem.db")
 	s, err := New(WithPath(path))
 	if err != nil {
 		t.Fatalf("New() error = %v", err)

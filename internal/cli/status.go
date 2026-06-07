@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// newStatusCmd crea `arc status`: muestra la sesión activa y su estado.
+// newStatusCmd crea `nem status`: muestra la sesión activa y su estado.
 func newStatusCmd() *cobra.Command {
 	var chatFlag string
 	cmd := &cobra.Command{
@@ -35,7 +35,7 @@ func runStatus(cmd *cobra.Command, chatFlag string) error {
 	}
 	if chatID == "" {
 		fmt.Fprintln(out, "No active session detected (Codex/Claude).")
-		fmt.Fprintln(out, "Open a session with your agent, or use 'arc status --chat <id>'.")
+		fmt.Fprintln(out, "Open a session with your agent, or use 'nem status --chat <id>'.")
 		return nil
 	}
 
@@ -45,7 +45,7 @@ func runStatus(cmd *cobra.Command, chatFlag string) error {
 	}
 	if chat == nil {
 		fmt.Fprintf(out, "Active session detected (%s): %s\n", source, chatID)
-		fmt.Fprintln(out, "Not ingested yet. Run 'arc ingest' to pull it in.")
+		fmt.Fprintln(out, "Not ingested yet. Run 'nem ingest' to pull it in.")
 		return nil
 	}
 

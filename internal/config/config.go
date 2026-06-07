@@ -17,12 +17,12 @@ type Scope struct {
 	Chats   []string `toml:"chats"`
 }
 
-// file es el contenido de ~/.arc/config.toml.
+// file es el contenido de ~/.nem/config.toml.
 type file struct {
 	Scopes map[string]Scope `toml:"scopes"`
 }
 
-// Scopes carga los scopes definidos en ~/.arc/config.toml. Si el archivo no
+// Scopes carga los scopes definidos en ~/.nem/config.toml. Si el archivo no
 // existe, devuelve un mapa vacío sin error: "sin scopes" es el default natural
 // (acceso completo).
 func Scopes() (map[string]Scope, error) {

@@ -10,7 +10,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Dieg0Code/arc/internal/db"
+	"github.com/Dieg0Code/nem/internal/db"
 )
 
 // maxLineBytes es el tope por línea del scanner. Las sesiones pueden traer

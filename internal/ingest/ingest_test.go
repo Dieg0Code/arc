@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Dieg0Code/arc/internal/db"
+	"github.com/Dieg0Code/nem/internal/db"
 )
 
 func TestCodexParser_Parse(t *testing.T) {
@@ -56,7 +56,7 @@ func TestCodexParser_Parse(t *testing.T) {
 func TestClaudeParser_Parse(t *testing.T) {
 	const session = `
 {"type":"permission-mode","permissionMode":"default","sessionId":"sess-1"}
-{"type":"user","uuid":"u1","timestamp":"2026-05-09T00:31:46.588Z","sessionId":"sess-1","cwd":"C:\\Users\\Diego\\dev\\arc","message":{"role":"user","content":"arregla el bug"}}
+{"type":"user","uuid":"u1","timestamp":"2026-05-09T00:31:46.588Z","sessionId":"sess-1","cwd":"C:\\Users\\Diego\\dev\\nem","message":{"role":"user","content":"arregla el bug"}}
 {"type":"assistant","uuid":"a1","timestamp":"2026-05-09T00:31:50.000Z","sessionId":"sess-1","message":{"role":"assistant","content":[{"type":"thinking","thinking":"hay que revisar el lock"},{"type":"text","text":"voy a revisar"},{"type":"tool_use","id":"t1","name":"Bash","input":{"command":"go test"}}]}}
 {"type":"user","uuid":"u2","timestamp":"2026-05-09T00:32:00.000Z","sessionId":"sess-1","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"t1","content":"FAIL: data race"}]}}
 {"type":"ai-title","title":"fix the bug"}
@@ -69,8 +69,8 @@ func TestClaudeParser_Parse(t *testing.T) {
 	if pc.Chat.ID != "sess-1" {
 		t.Errorf("chat id = %q", pc.Chat.ID)
 	}
-	if pc.Chat.Title != "arc" {
-		t.Errorf("title = %q, want arc", pc.Chat.Title)
+	if pc.Chat.Title != "nem" {
+		t.Errorf("title = %q, want nem", pc.Chat.Title)
 	}
 
 	// user(str), reasoning, assistant text, tool_use, tool_result
@@ -122,7 +122,7 @@ func TestIngest_OrchestrationIdempotent(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	store, err := db.New(db.WithPath(filepath.Join(t.TempDir(), "arc.db")))
+	store, err := db.New(db.WithPath(filepath.Join(t.TempDir(), "nem.db")))
 	if err != nil {
 		t.Fatalf("db.New: %v", err)
 	}

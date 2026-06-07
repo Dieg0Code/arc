@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Dieg0Code/arc/internal/db"
+	"github.com/Dieg0Code/nem/internal/db"
 )
 
 // Formato de salida soportado.

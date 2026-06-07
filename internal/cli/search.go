@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Dieg0Code/arc/internal/db"
-	"github.com/Dieg0Code/arc/internal/output"
+	"github.com/Dieg0Code/nem/internal/db"
+	"github.com/Dieg0Code/nem/internal/output"
 	"github.com/spf13/cobra"
 )
 
 // snippetLen acota el contenido mostrado por hit en la búsqueda.
 const snippetLen = 240
 
-// newSearchCmd crea `arc search "<query>"`: búsqueda full-text (FTS5/BM25).
+// newSearchCmd crea `nem search "<query>"`: búsqueda full-text (FTS5/BM25).
 func newSearchCmd() *cobra.Command {
 	var (
 		top    int
@@ -103,7 +103,7 @@ func renderSearchJSON(cmd *cobra.Command, query string, hits []db.SearchHit) err
 	return nil
 }
 
-// validRoles son los roles que arc persiste. "all" es un atajo especial.
+// validRoles son los roles que nem persiste. "all" es un atajo especial.
 var validRoles = map[string]bool{"user": true, "assistant": true, "reasoning": true, "tool": true}
 
 // resolveRoles traduce el flag --role a la lista de roles para filtrar.

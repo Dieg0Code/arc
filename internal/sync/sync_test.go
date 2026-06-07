@@ -6,15 +6,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Dieg0Code/arc/internal/db"
-	"github.com/Dieg0Code/arc/internal/output"
+	"github.com/Dieg0Code/nem/internal/db"
+	"github.com/Dieg0Code/nem/internal/output"
 )
 
 // seedStore crea un store temporal con un chat, mensajes y un commit cuyo
 // snapshot contiene un secreto.
 func seedStore(t *testing.T) (db.Store, string) {
 	t.Helper()
-	store, err := db.New(db.WithPath(filepath.Join(t.TempDir(), "arc.db")))
+	store, err := db.New(db.WithPath(filepath.Join(t.TempDir(), "nem.db")))
 	if err != nil {
 		t.Fatalf("db.New: %v", err)
 	}

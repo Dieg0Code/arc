@@ -3,18 +3,18 @@
 # Docs: https://goreleaser.com
 version: 2
 
-project_name: arc
+project_name: nem
 
 before:
   hooks:
     - go mod tidy
 
 builds:
-  - id: arc
-    main: ./cmd/arc
-    binary: arc
+  - id: nem
+    main: ./cmd/nem
+    binary: nem
     env:
-      - CGO_ENABLED=0 # arc es Go puro (modernc sqlite): binario estático
+      - CGO_ENABLED=0 # nem es Go puro (modernc sqlite): binario estático
     goos:
       - linux
       - darwin
@@ -23,10 +23,10 @@ builds:
       - amd64
       - arm64
     ldflags:
-      - -s -w -X github.com/Dieg0Code/arc/internal/cli.version={{ .Version }}
+      - -s -w -X github.com/Dieg0Code/nem/internal/cli.version={{ .Version }}
 
 archives:
-  - id: arc
+  - id: nem
     formats: [tar.gz]
     name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
     format_overrides:
@@ -49,34 +49,34 @@ changelog:
       - "^chore:"
       - "Merge pull request"
 
-# Windows: scoop install arc (tras: scoop bucket add arc https://github.com/Dieg0Code/scoop-bucket)
+# Windows: scoop install nem (tras: scoop bucket add nem https://github.com/Dieg0Code/scoop-bucket)
 scoops:
   - repository:
       owner: Dieg0Code
       name: scoop-bucket
       token: "{{ .Env.TAP_GITHUB_TOKEN }}"
-    homepage: https://github.com/Dieg0Code/arc
+    homepage: https://github.com/Dieg0Code/nem
     description: Version your agent's context like git versions code.
     license: MIT
 
-# macOS/Linux: brew install Dieg0Code/homebrew-tap/arc
+# macOS/Linux: brew install Dieg0Code/homebrew-tap/nem
 homebrew_casks:
   - repository:
       owner: Dieg0Code
       name: homebrew-tap
       token: "{{ .Env.TAP_GITHUB_TOKEN }}"
-    homepage: https://github.com/Dieg0Code/arc
+    homepage: https://github.com/Dieg0Code/nem
     description: Version your agent's context like git versions code.
     # Quita la cuarentena de macOS para que el binario sin firmar pueda correr.
     hooks:
       post:
         install: |
           if system_command("/usr/bin/xattr", args: ["-h"]).exit_status == 0
-            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/arc"]
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/nem"]
           end
 
 release:
   github:
     owner: Dieg0Code
-    name: arc
+    name: nem
   draft: false

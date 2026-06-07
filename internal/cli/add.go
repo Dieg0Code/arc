@@ -4,11 +4,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Dieg0Code/arc/internal/db"
+	"github.com/Dieg0Code/nem/internal/db"
 	"github.com/spf13/cobra"
 )
 
-// newAddCmd crea `arc add`: marca mensajes para el próximo commit (staging).
+// newAddCmd crea `nem add`: marca mensajes para el próximo commit (staging).
 func newAddCmd() *cobra.Command {
 	var (
 		lastN    int
@@ -20,7 +20,7 @@ func newAddCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add",
 		Short: "Stage messages for the next commit",
-		Long:  "arc add -L <n>  ·  arc add --from <msgID> --to <msgID>",
+		Long:  "nem add -L <n>  ·  nem add --from <msgID> --to <msgID>",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runAdd(cmd, chatFlag, lastN, fromID, toID, role)
 		},

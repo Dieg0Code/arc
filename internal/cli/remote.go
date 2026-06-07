@@ -3,12 +3,12 @@ package cli
 import (
 	"fmt"
 
-	"github.com/Dieg0Code/arc/internal/config"
-	"github.com/Dieg0Code/arc/internal/sync"
+	"github.com/Dieg0Code/nem/internal/config"
+	"github.com/Dieg0Code/nem/internal/sync"
 	"github.com/spf13/cobra"
 )
 
-// newRemoteCmd crea `arc remote` (lista) y `arc remote add <name> <url>`.
+// newRemoteCmd crea `nem remote` (lista) y `nem remote add <name> <url>`.
 func newRemoteCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "remote",
@@ -23,7 +23,7 @@ func newRemoteCmd() *cobra.Command {
 				return err
 			}
 			if out == "" {
-				fmt.Fprintln(cmd.OutOrStdout(), "no remotes (use 'arc remote add origin <url>')")
+				fmt.Fprintln(cmd.OutOrStdout(), "no remotes (use 'nem remote add origin <url>')")
 				return nil
 			}
 			fmt.Fprintln(cmd.OutOrStdout(), out)

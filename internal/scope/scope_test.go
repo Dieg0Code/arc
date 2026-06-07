@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Dieg0Code/arc/internal/config"
+	"github.com/Dieg0Code/nem/internal/config"
 )
 
 var sampleChats = []ChatRef{

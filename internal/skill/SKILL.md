@@ -1,30 +1,30 @@
 ---
-name: arc
-description: Version your conversation context with arc. Use it to RECALL prior context at the start of a session (decisions, resolved edge-cases, agreed conventions) and to PERSIST what you resolve, so context survives across sessions. arc is to your context what git is to code.
+name: nem
+description: Version your conversation context with nem. Use it to RECALL prior context at the start of a session (decisions, resolved edge-cases, agreed conventions) and to PERSIST what you resolve, so context survives across sessions. nem is to your context what git is to code.
 metadata:
   domain: workflow
-  triggers: arc, context, remember, recall, persist, previous session, what did we decide, resume, continue prior work
+  triggers: nem, context, remember, recall, persist, previous session, what did we decide, resume, continue prior work
 ---
 
-# arc — version your own context
+# nem — version your own context
 
-Your context window is wiped between sessions; arc's isn't. You (the agent) drive
+Your context window is wiped between sessions; nem's isn't. You (the agent) drive
 it: recall at the start, persist what you resolve.
 
 ## 1. At the start: RECALL
 
-- `arc status` — detected chat, staged messages, latest commit.
-- `arc search "<terms>" --format llm` — search versioned context (full-text) with
+- `nem status` — detected chat, staged messages, latest commit.
+- `nem search "<terms>" --format llm` — search versioned context (full-text) with
   the task's keywords (module, feature, bug). `--role all` also includes tools.
-- `arc log` — list context commits (hash + message).
-- `arc read HEAD --format llm` / `arc read <hash> --format llm` — the frozen
+- `nem log` — list context commits (hash + message).
+- `nem read HEAD --format llm` / `nem read <hash> --format llm` — the frozen
   snapshot of a commit. Read it before proposing anything: avoid redoing work or
   contradicting a prior decision.
 
-> **Scoped access:** you may be limited to a scope (via `ARC_SCOPE` or `--scope`).
+> **Scoped access:** you may be limited to a scope (via `NEM_SCOPE` or `--scope`).
 > When scoped, `search`/`read`/`log` only see chats in that scope — so a "no
 > results" doesn't mean a fact never existed, it may just be out of scope.
-> `arc scope list` shows the available scopes.
+> `nem scope list` shows the available scopes.
 
 ## 2. While working: IDENTIFY what's worth keeping
 
@@ -35,15 +35,15 @@ save in-progress exploration, log dumps, or code that already lives in the repo.
 ## 3. When a thread is resolved: PERSIST
 
 1. Stage the relevant messages:
-   - `arc add -L <n>`  (last N messages)  or
-   - `arc add --from <msgID> --to <msgID>`  (exact range).
-2. `arc commit -m "<message you write yourself>"` — imperative, describing the
-   DECISION, not the activity. Your future self will read it in `arc log`.
-   e.g. `arc commit -m "store JSONL per commit; keep binary DB out of git"`.
+   - `nem add -L <n>`  (last N messages)  or
+   - `nem add --from <msgID> --to <msgID>`  (exact range).
+2. `nem commit -m "<message you write yourself>"` — imperative, describing the
+   DECISION, not the activity. Your future self will read it in `nem log`.
+   e.g. `nem commit -m "store JSONL per commit; keep binary DB out of git"`.
 
 ### Choose which roles to stage (`--role`)
 
-`arc add` and `arc search` take `--role` to control which message roles are
+`nem add` and `nem search` take `--role` to control which message roles are
 included. Valid roles: `user`, `assistant`, `reasoning`, `tool` (comma-separated),
 or `all`.
 
@@ -53,16 +53,16 @@ or `all`.
 - `--role all` — everything, including tool calls/outputs (use sparingly; it
   bloats the snapshot and burns tokens on read).
 
-With `-L`, the count applies AFTER the role filter: `arc add -L 10 --role assistant`
+With `-L`, the count applies AFTER the role filter: `nem add -L 10 --role assistant`
 stages your last 10 assistant messages, not 10 raw messages.
 
 ## 4. Sharing
 
-`arc sync` (push to the team remote) is run by the **human**, not you. You persist
+`nem sync` (push to the team remote) is run by the **human**, not you. You persist
 locally with add/commit; the user decides when to sync.
 
 ## Token economy
 
-Prefer targeted `arc search` and `arc read <hash>` over dumping the whole log into
+Prefer targeted `nem search` and `nem read <hash>` over dumping the whole log into
 context. One commit per coherent decision: small snapshots search and read better.
-If `arc status` shows no active session, pass `--chat <id>` to add/commit.
+If `nem status` shows no active session, pass `--chat <id>` to add/commit.

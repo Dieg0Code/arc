@@ -26,7 +26,7 @@ type Message struct {
 
 // Commit es un snapshot INMUTABLE de un rango de mensajes. Copia el texto en
 // Snapshot (JSON) al momento de commitear, de modo que reingestar o editar
-// mensajes nunca altera lo que un commit ya capturó: "tu agente olvida, arc no".
+// mensajes nunca altera lo que un commit ya capturó: "tu agente olvida, nem no".
 type Commit struct {
 	Hash      string `gorm:"primaryKey"`
 	ChatID    string `gorm:"index"`
@@ -38,7 +38,7 @@ type Commit struct {
 	CreatedAt int64
 }
 
-// Staging es el index git-like: los mensajes marcados con `arc add` que esperan
+// Staging es el index git-like: los mensajes marcados con `nem add` que esperan
 // ser commiteados. Una fila por mensaje staged del chat activo.
 type Staging struct {
 	ID        string `gorm:"primaryKey"`

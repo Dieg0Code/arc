@@ -29,7 +29,7 @@ func TestActiveScopeName_Precedence(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Setenv("ARC_SCOPE", tt.env)
+			t.Setenv("NEM_SCOPE", tt.env)
 			got := activeScopeName(cmdWithScopeFlag(tt.flag))
 			if got != tt.want {
 				t.Errorf("activeScopeName() = %q, want %q", got, tt.want)

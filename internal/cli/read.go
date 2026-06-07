@@ -6,12 +6,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Dieg0Code/arc/internal/db"
-	"github.com/Dieg0Code/arc/internal/output"
+	"github.com/Dieg0Code/nem/internal/db"
+	"github.com/Dieg0Code/nem/internal/output"
 	"github.com/spf13/cobra"
 )
 
-// newReadCmd crea `arc read HEAD|<hash>`: muestra el snapshot de un commit.
+// newReadCmd crea `nem read HEAD|<hash>`: muestra el snapshot de un commit.
 func newReadCmd() *cobra.Command {
 	var (
 		format   string

@@ -1,5 +1,5 @@
 // Package ingest parsea los archivos de sesión de los agentes (Codex, Claude
-// Code) y los persiste en el Store de arc. Los parsers son puros (archivo →
+// Code) y los persiste en el Store de nem. Los parsers son puros (archivo →
 // ParsedChat); la orquestación inserta de forma idempotente.
 package ingest
 
@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Dieg0Code/arc/internal/db"
+	"github.com/Dieg0Code/nem/internal/db"
 )
 
 // Roles con los que se persisten los mensajes. user/assistant son la
@@ -32,7 +32,7 @@ const (
 const maxToolChars = 2000
 
 // maxReasoningChars acota el razonamiento. Es más generoso que las tools (el
-// razonamiento es la señal que arc más quiere preservar) pero igual bounded.
+// razonamiento es la señal que nem más quiere preservar) pero igual bounded.
 const maxReasoningChars = 4000
 
 // truncate recorta s a max caracteres (runas), agregando una marca si se cortó.

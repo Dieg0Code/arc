@@ -3,15 +3,15 @@ package cli
 import (
 	"fmt"
 
-	"github.com/Dieg0Code/arc/internal/ingest"
+	"github.com/Dieg0Code/nem/internal/ingest"
 	"github.com/spf13/cobra"
 )
 
-// newIngestCmd crea `arc ingest [codex|claude]`. Sin argumento ingesta ambos.
+// newIngestCmd crea `nem ingest [codex|claude]`. Sin argumento ingesta ambos.
 func newIngestCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:       "ingest [codex|claude]",
-		Short:     "Ingest Codex and/or Claude Code sessions into the arc store",
+		Short:     "Ingest Codex and/or Claude Code sessions into the nem store",
 		Args:      cobra.MaximumNArgs(1),
 		ValidArgs: []string{"codex", "claude"},
 		RunE: func(cmd *cobra.Command, args []string) error {

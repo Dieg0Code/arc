@@ -5,8 +5,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/Dieg0Code/arc/internal/config"
-	"github.com/Dieg0Code/arc/internal/scope"
+	"github.com/Dieg0Code/nem/internal/config"
+	"github.com/Dieg0Code/nem/internal/scope"
 	"github.com/spf13/cobra"
 )
 
@@ -14,13 +14,13 @@ import (
 func newScopeCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "scope",
-		Short: "Inspect read-access scopes (defined in ~/.arc/config.toml)",
+		Short: "Inspect read-access scopes (defined in ~/.nem/config.toml)",
 	}
 	cmd.AddCommand(newScopeListCmd(), newScopeShowCmd())
 	return cmd
 }
 
-// newScopeListCmd crea `arc scope list`: lista los scopes configurados.
+// newScopeListCmd crea `nem scope list`: lista los scopes configurados.
 func newScopeListCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "list",
@@ -32,7 +32,7 @@ func newScopeListCmd() *cobra.Command {
 			}
 			out := cmd.OutOrStdout()
 			if len(scopes) == 0 {
-				fmt.Fprintln(out, "no scopes configured (define them in ~/.arc/config.toml)")
+				fmt.Fprintln(out, "no scopes configured (define them in ~/.nem/config.toml)")
 				return nil
 			}
 			names := make([]string, 0, len(scopes))
@@ -59,7 +59,7 @@ func newScopeListCmd() *cobra.Command {
 	}
 }
 
-// newScopeShowCmd crea `arc scope show <name>`: muestra a qué chats resuelve.
+// newScopeShowCmd crea `nem scope show <name>`: muestra a qué chats resuelve.
 func newScopeShowCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "show <name>",

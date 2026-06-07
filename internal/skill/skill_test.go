@@ -6,10 +6,10 @@ import (
 	"testing"
 )
 
-// readSkill devuelve el contenido del SKILL.md de arc bajo el home dado.
+// readSkill devuelve el contenido del SKILL.md de nem bajo el home dado.
 func readSkill(t *testing.T, root string) (string, bool) {
 	t.Helper()
-	path := filepath.Join(root, "skills", "arc", "SKILL.md")
+	path := filepath.Join(root, "skills", "nem", "SKILL.md")
 	b, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
 		return "", false
@@ -85,7 +85,7 @@ func TestInstall_IdempotentOverwrite(t *testing.T) {
 		t.Fatalf("first install: %v", err)
 	}
 	// Ensuciar el archivo y reinstalar.
-	path := filepath.Join(claude, "skills", "arc", "SKILL.md")
+	path := filepath.Join(claude, "skills", "nem", "SKILL.md")
 	if err := os.WriteFile(path, []byte("DIRTY"), 0o644); err != nil {
 		t.Fatal(err)
 	}

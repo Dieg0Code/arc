@@ -1,6 +1,6 @@
-// Package skill instala el "agent skill" de arc: un SKILL.md que le enseña al
-// agente (Claude Code, Codex) cuándo y cómo usar arc, cerrando el loop de que
-// el agente persista su propio contexto. arc es dueño del subdirectorio "arc"
+// Package skill instala el "agent skill" de nem: un SKILL.md que le enseña al
+// agente (Claude Code, Codex) cuándo y cómo usar nem, cerrando el loop de que
+// el agente persista su propio contexto. nem es dueño del subdirectorio "nem"
 // dentro de skills/ y lo regenera de forma idempotente; nunca toca otros skills.
 package skill
 
@@ -11,9 +11,9 @@ import (
 	"path/filepath"
 )
 
-// skillName es el nombre del subdirectorio (y del skill) que arc administra.
-// arc SOLO escribe dentro de este subdir; jamás toca otros skills del usuario.
-const skillName = "arc"
+// skillName es el nombre del subdirectorio (y del skill) que nem administra.
+// nem SOLO escribe dentro de este subdir; jamás toca otros skills del usuario.
+const skillName = "nem"
 
 // Agent identifica a un agente soportado por la instalación del skill.
 type Agent struct {
@@ -36,7 +36,7 @@ type Report struct {
 	Skipped   []string    // agentes ausentes (no existe su home dir)
 }
 
-// Installer escribe el skill de arc en los agentes presentes.
+// Installer escribe el skill de nem en los agentes presentes.
 type Installer interface {
 	// Install escribe SKILL.md en cada agente detectado y devuelve el reporte.
 	Install() (*Report, error)
@@ -126,7 +126,7 @@ func defaultAgents() ([]Agent, error) {
 
 // Install escribe el SKILL.md en cada agente cuyo home exista. Los agentes
 // ausentes se saltan (no es error: el usuario puede no tenerlos instalados).
-// La escritura es idempotente: sobrescribe siempre el skill "arc".
+// La escritura es idempotente: sobrescribe siempre el skill "nem".
 func (i *installer) Install() (*Report, error) {
 	report := &Report{}
 	for _, a := range i.cfg.agents {
@@ -147,8 +147,8 @@ func (i *installer) Install() (*Report, error) {
 	return report, nil
 }
 
-// writeSkill crea <root>/skills/arc/ y escribe SKILL.md ahí. Solo toca el subdir
-// "arc"; nunca otros skills del usuario.
+// writeSkill crea <root>/skills/nem/ y escribe SKILL.md ahí. Solo toca el subdir
+// "nem"; nunca otros skills del usuario.
 func (i *installer) writeSkill(a Agent) (string, error) {
 	dir := filepath.Join(a.Root, "skills", skillName)
 	if err := os.MkdirAll(dir, 0o755); err != nil {

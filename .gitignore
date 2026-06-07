@@ -1,13 +1,13 @@
 # Binarios compilados
-/arc
-/arc.exe
+/nem
+/nem.exe
 /bin/
 
 # Salida de GoReleaser
 /dist/
 
-# Store local de arc (no se versiona el repo de código)
-/.arc/
+# Store local de nem (no se versiona el repo de código)
+/.nem/
 
 # Artefactos de test/cobertura
 *.out
@@ -20,9 +20,9 @@ Thumbs.db
 .idea/
 .vscode/
 
-# Repo de referencia clonado para estudiar convenciones (no es parte de arc)
+# Repo de referencia clonado para estudiar convenciones (no es parte de nem)
 /_syndicate_ref/
 
-# Skills de terceros instaladas localmente (no son parte de arc)
+# Skills de terceros instaladas localmente (no son parte de nem)
 /.agents/
 /skills-lock.json

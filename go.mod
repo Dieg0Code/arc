@@ -1,4 +1,4 @@
-module github.com/Dieg0Code/arc
+module github.com/Dieg0Code/nem
 
 go 1.25.0
 

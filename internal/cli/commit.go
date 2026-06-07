@@ -7,12 +7,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Dieg0Code/arc/internal/db"
-	"github.com/Dieg0Code/arc/internal/output"
+	"github.com/Dieg0Code/nem/internal/db"
+	"github.com/Dieg0Code/nem/internal/output"
 	"github.com/spf13/cobra"
 )
 
-// newCommitCmd crea `arc commit -m`: congela los mensajes staged en un commit
+// newCommitCmd crea `nem commit -m`: congela los mensajes staged en un commit
 // inmutable (copia el texto en un snapshot).
 func newCommitCmd() *cobra.Command {
 	var (
@@ -52,7 +52,7 @@ func runCommit(cmd *cobra.Command, chatFlag, message string) error {
 		return err
 	}
 	if len(staged) == 0 {
-		return errors.New("nothing staged; run 'arc add -L <n>' first")
+		return errors.New("nothing staged; run 'nem add -L <n>' first")
 	}
 
 	snapshot, err := output.BuildSnapshot(staged)

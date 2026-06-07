@@ -1,11 +1,11 @@
-// Command arc versiona el contexto de los agentes como git versiona el código.
+// Command nem versiona el contexto de los agentes como git versiona el código.
 package main
 
 import (
 	"fmt"
 	"os"
 
-	"github.com/Dieg0Code/arc/internal/cli"
+	"github.com/Dieg0Code/nem/internal/cli"
 )
 
 func main() {

@@ -1,4 +1,4 @@
-// Package cli define los comandos de arc sobre cobra.
+// Package cli define los comandos de nem sobre cobra.
 package cli
 
 import (
@@ -23,20 +23,20 @@ func resolveVersion() string {
 	return version
 }
 
-// NewRootCmd construye el comando raíz `arc` con todos sus subcomandos.
+// NewRootCmd construye el comando raíz `nem` con todos sus subcomandos.
 func NewRootCmd() *cobra.Command {
 	root := &cobra.Command{
-		Use:           "arc",
-		Short:         "arc — your agent forgets, arc doesn't",
-		Long:          "arc versions agent context the way git versions code.",
+		Use:           "nem",
+		Short:         "nem — your agent forgets, nem doesn't",
+		Long:          "nem versions agent context the way git versions code.",
 		Version:       resolveVersion(),
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
 
-	// --scope limita el acceso de lectura a un scope de ~/.arc/config.toml.
-	// Vacío = acceso completo. También se puede fijar con ARC_SCOPE.
-	root.PersistentFlags().String("scope", "", "limit read access to a scope from config.toml (or set ARC_SCOPE)")
+	// --scope limita el acceso de lectura a un scope de ~/.nem/config.toml.
+	// Vacío = acceso completo. También se puede fijar con NEM_SCOPE.
+	root.PersistentFlags().String("scope", "", "limit read access to a scope from config.toml (or set NEM_SCOPE)")
 
 	root.AddCommand(newInitCmd())
 	root.AddCommand(newIngestCmd())

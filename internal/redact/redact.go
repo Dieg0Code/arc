@@ -1,5 +1,5 @@
 // Package redact detecta y enmascara secretos (API keys, tokens, claves
-// privadas) antes de que el contenido salga de la máquina vía `arc sync`. Es
+// privadas) antes de que el contenido salga de la máquina vía `nem sync`. Es
 // secure-by-default: el scrubbing corre siempre en la exportación a git.
 package redact
 

@@ -1,6 +1,6 @@
 // Package scope resuelve el alcance de lectura activo: dado un scope con nombre
 // (de config), calcula qué chats puede ver el agente. Es opt-in — sin scope
-// activo, el acceso es completo (comportamiento por defecto de arc).
+// activo, el acceso es completo (comportamiento por defecto de nem).
 package scope
 
 import (
@@ -8,7 +8,7 @@ import (
 	"path"
 	"slices"
 
-	"github.com/Dieg0Code/arc/internal/config"
+	"github.com/Dieg0Code/nem/internal/config"
 )
 
 // ChatRef es la metadata mínima de un chat necesaria para resolver el scope.
@@ -75,7 +75,7 @@ func New(options ...Option) (Resolver, error) {
 	}
 	sc, ok := c.scopes[c.name]
 	if !ok {
-		return nil, fmt.Errorf("unknown scope %q (define it in ~/.arc/config.toml)", c.name)
+		return nil, fmt.Errorf("unknown scope %q (define it in ~/.nem/config.toml)", c.name)
 	}
 	r.active = true
 	r.scope = sc
