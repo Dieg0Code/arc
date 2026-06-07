@@ -56,6 +56,7 @@ func NewRootCmd() *cobra.Command {
 	root.AddCommand(newTimelineCmd())
 	root.AddCommand(newMCPCmd())
 	root.AddCommand(newConfigCmd())
+	root.AddCommand(newDoctorCmd())
 
 	return root
 }

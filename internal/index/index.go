@@ -17,7 +17,9 @@ import (
 )
 
 // summaryTextBudget acota cuánto texto de la conversación se le pasa al LLM.
-const summaryTextBudget = 3000
+// Más chico = generación más rápida (importa en CPU, donde los prompts largos
+// hacen lento/flaky al modelo local).
+const summaryTextBudget = 1500
 
 // maxSummaryChars acota el resumen de un nodo (presupuesto de tokens del outline).
 const maxSummaryChars = 280
@@ -41,9 +43,13 @@ type Builder interface {
 	Build() (*Report, error)
 }
 
+// ProgressFunc recibe el avance de Build (stage = "summarize" | "embed").
+type ProgressFunc func(stage string, done, total int)
+
 type config struct {
 	summary  SummaryFunc
 	embedder embed.Embedder
+	progress ProgressFunc
 }
 
 // Option configura al Builder.
@@ -67,22 +73,32 @@ func WithSummarizer(s summarize.Summarizer) Option {
 		if s == nil {
 			return errors.New("summarizer cannot be nil")
 		}
-		// Si el backend falla una vez (p.ej. Ollama no está corriendo), no se
-		// reintenta por cada chat: se cae al heurístico para el resto. Evita
-		// colgar `nem index` con N timeouts. Build() es secuencial, así que el
-		// flag no necesita sincronización.
-		dead := false
+		// Tolera fallos transitorios (p.ej. el primer request mientras el modelo
+		// carga en frío) y solo se rinde —pasando todo a heurístico— tras varios
+		// fallos seguidos (backend realmente caído), evitando colgar con N
+		// timeouts. Build() es secuencial, así que el contador no necesita sync.
+		const giveUpAfter = 3
+		fails := 0
 		c.summary = func(chat db.Chat, msgs []db.Message) string {
-			if dead {
+			if fails >= giveUpAfter {
 				return HeuristicSummary(chat, msgs)
 			}
 			out, err := s.Summarize(context.Background(), chat.Title, joinForSummary(msgs))
 			if err != nil || strings.TrimSpace(out) == "" {
-				dead = true
+				fails++
 				return HeuristicSummary(chat, msgs)
 			}
+			fails = 0 // reset al primer éxito
 			return truncate(out, maxSummaryChars)
 		}
+		return nil
+	}
+}
+
+// WithProgress recibe callbacks de avance (para mostrar "N/total" en el CLI).
+func WithProgress(fn ProgressFunc) Option {
+	return func(c *config) error {
+		c.progress = fn
 		return nil
 	}
 }
@@ -116,6 +132,7 @@ type builder struct {
 	store    db.Store
 	summary  SummaryFunc
 	embedder embed.Embedder
+	progress ProgressFunc
 }
 
 // New crea un Builder sobre el store dado.
@@ -129,7 +146,7 @@ func New(store db.Store, options ...Option) (Builder, error) {
 			return nil, fmt.Errorf("failed to apply index option: %w", err)
 		}
 	}
-	return &builder{store: store, summary: cfg.summary, embedder: cfg.embedder}, nil
+	return &builder{store: store, summary: cfg.summary, embedder: cfg.embedder, progress: cfg.progress}, nil
 }
 
 // Build hace un rebuild completo: project → chat → commit.
@@ -146,7 +163,10 @@ func (b *builder) Build() (*Report, error) {
 	var nodes []db.Node
 	seenProject := map[string]bool{}
 
-	for _, chat := range chats {
+	for i, chat := range chats {
+		if b.progress != nil {
+			b.progress("summarize", i+1, len(chats))
+		}
 		proj := projectKey(chat.Title)
 		projID := "project:" + proj
 		if !seenProject[projID] {
@@ -208,6 +228,9 @@ func (b *builder) Build() (*Report, error) {
 	rep.Nodes = len(nodes)
 
 	if b.embedder != nil {
+		if b.progress != nil {
+			b.progress("embed", len(nodes), len(nodes))
+		}
 		rep.Embedded = b.embedNodes(nodes)
 	}
 	return rep, nil

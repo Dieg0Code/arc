@@ -60,7 +60,7 @@ func WithAPIKey(k string) Option {
 
 // New crea un Summarizer para el backend dado: "ollama" | "api".
 func New(backend string, options ...Option) (Summarizer, error) {
-	cfg := &config{backend: backend, client: &http.Client{Timeout: 90 * time.Second}}
+	cfg := &config{backend: backend, client: &http.Client{Timeout: 180 * time.Second}}
 	for _, o := range options {
 		if err := o(cfg); err != nil {
 			return nil, fmt.Errorf("failed to apply summarize option: %w", err)

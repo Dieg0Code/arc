@@ -42,6 +42,14 @@ func runIndex(cmd *cobra.Command, backend, model, endpoint string) error {
 	if err != nil {
 		return err
 	}
+	// Progreso en stderr (stdout queda limpio para el reporte final).
+	errw := cmd.ErrOrStderr()
+	opts = append(opts, index.WithProgress(func(stage string, done, total int) {
+		fmt.Fprintf(errw, "\r%-10s %d/%d ", stage, done, total)
+		if done == total {
+			fmt.Fprintln(errw)
+		}
+	}))
 	b, err := index.New(store, opts...)
 	if err != nil {
 		return err
