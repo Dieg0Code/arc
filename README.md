@@ -11,7 +11,7 @@ nem versions agent context the way git versions code.
 [![codecov](https://codecov.io/gh/Dieg0Code/nem/graph/badge.svg?token=RFLOXG1BAA)](https://codecov.io/gh/Dieg0Code/nem)
 [![Go Reference](https://pkg.go.dev/badge/github.com/Dieg0Code/nem.svg)](https://pkg.go.dev/github.com/Dieg0Code/nem)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/Dieg0Code/nem)](https://github.com/Dieg0Code/nem/releases)
+[![Release](https://img.shields.io/github/v/release/Dieg0Code/nem?display_name=release)](https://github.com/Dieg0Code/nem/releases)
 
 </div>
 
