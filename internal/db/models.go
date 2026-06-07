@@ -80,6 +80,14 @@ type Node struct {
 	Superseded   bool   // la decisión fue reemplazada por una posterior
 	SupersededBy string // id del nodo/commit que la reemplaza
 	Pinned       bool   `gorm:"index"` // resumen escrito por el agente/humano; `index` nunca lo auto-pisa (capa mutable sobre los commits inmutables)
+
+	// Duraciones (capa temporal): tiempo activo real vs span de calendario, para
+	// que el agente calibre estimaciones. Se computan en `index` desde los
+	// timestamps de los mensajes (ver internal/timing).
+	ActiveSecs int64 // tiempo activo (segundos), modelo role-aware
+	WallSecs   int64 // span de calendario (último - primer mensaje), segundos
+	Sessions   int   // nº de "sesiones" (sentadas separadas por huecos largos)
+	LastActive int64 // unix del último mensaje (para recencia)
 }
 
 // Embedding es el vector (opcional) de un nodo del índice, guardado como BLOB

@@ -3,8 +3,10 @@ package cli
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/Dieg0Code/nem/internal/db"
+	"github.com/Dieg0Code/nem/internal/timing"
 	"github.com/spf13/cobra"
 )
 
@@ -83,6 +85,9 @@ func printNode(cmd *cobra.Command, store db.Store, n db.Node, level, depth int, 
 	indent := strings.Repeat("  ", level)
 	id := n.ID
 	line := fmt.Sprintf("%s- [%s] %s", indent, n.Kind, n.Title)
+	if n.ActiveSecs > 0 {
+		line += "  · ~" + timing.Format(time.Duration(n.ActiveSecs)*time.Second) + " activas"
+	}
 	if s := strings.TrimSpace(n.Summary); s != "" {
 		line += "  — " + s
 	}

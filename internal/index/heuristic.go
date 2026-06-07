@@ -175,13 +175,13 @@ func unwrapRequest(s string) string {
 
 // cleanLead limpia wrappers/markdown/código y devuelve las primeras 1-2 frases.
 func cleanLead(s string) string {
-	s = stripWrappers(s)                         // wrappers de sistema/tool
-	s = reCodeFence.ReplaceAllString(s, " ")     // bloques de código
-	s = reMdLink.ReplaceAllString(s, "$1")       // [texto](url) -> texto
-	s = strings.ReplaceAll(s, "`", "")           // inline code
-	s = strings.ReplaceAll(s, "*", "")           // bold/italic
-	s = reMdLead.ReplaceAllString(s, "")         // #, >, -, * líderes por línea
-	s = oneLine(s)                               // colapsar espacios
+	s = stripWrappers(s)                     // wrappers de sistema/tool
+	s = reCodeFence.ReplaceAllString(s, " ") // bloques de código
+	s = reMdLink.ReplaceAllString(s, "$1")   // [texto](url) -> texto
+	s = strings.ReplaceAll(s, "`", "")       // inline code
+	s = strings.ReplaceAll(s, "*", "")       // bold/italic
+	s = reMdLead.ReplaceAllString(s, "")     // #, >, -, * líderes por línea
+	s = oneLine(s)                           // colapsar espacios
 	s = strings.TrimSpace(s)
 	if s == "" {
 		return ""

@@ -41,6 +41,9 @@ type Store interface {
 	// MessagesBySeqRange devuelve los mensajes del chat con Seq en [from,to],
 	// filtrando por roles (vacío/nil = todos).
 	MessagesBySeqRange(chatID string, fromSeq, toSeq int64, roles []string) ([]Message, error)
+	// MessageStamps devuelve los (rol, timestamp) válidos del chat en orden de Seq
+	// (para medir duración activa sin cargar el contenido).
+	MessageStamps(chatID string) ([]Stamp, error)
 	// SearchMessages busca full-text (FTS5/BM25) y devuelve los mejores hits.
 	// roles filtra por rol de mensaje; chatIDs limita a esos chats (scope).
 	// Ambos vacíos/nil = sin filtro.

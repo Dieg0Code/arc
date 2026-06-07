@@ -30,6 +30,7 @@ func (s *store) UpsertNodes(nodes []Node) (int64, error) {
 			"parent_id", "kind", "chat_id", "title", "summary",
 			"msg_from_seq", "msg_to_seq", "commit_hash", "created_at",
 			"tokens", "superseded", "superseded_by", "pinned",
+			"active_secs", "wall_secs", "sessions", "last_active",
 		}),
 	}).CreateInBatches(nodes, insertBatchSize)
 	if tx.Error != nil {

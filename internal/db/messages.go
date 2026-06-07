@@ -81,6 +81,27 @@ func (s *store) MessagesBySeqRange(chatID string, fromSeq, toSeq int64, roles []
 	return msgs, nil
 }
 
+// Stamp es el par (rol, timestamp) de un mensaje, para medir duraciones sin
+// cargar el contenido completo.
+type Stamp struct {
+	Role      string
+	Timestamp int64
+}
+
+// MessageStamps devuelve los (rol, timestamp) de los mensajes del chat con
+// timestamp válido (>0), en orden de Seq (cronológico). Liviano: solo 2 columnas.
+func (s *store) MessageStamps(chatID string) ([]Stamp, error) {
+	var stamps []Stamp
+	err := s.gdb.Model(&Message{}).
+		Where("chat_id = ? AND timestamp > 0", chatID).
+		Order("seq ASC").
+		Find(&stamps).Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to load message stamps for chat %s: %w", chatID, err)
+	}
+	return stamps, nil
+}
+
 // SearchMessages corre una búsqueda full-text (FTS5/BM25) sobre el contenido de
 // los mensajes y devuelve los mejores hits con metadata del chat. El orden es
 // por relevancia BM25 (menor score = más relevante).

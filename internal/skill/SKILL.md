@@ -58,6 +58,21 @@ The loop is: **`outline` (see the map) → reason → `read`/`search`/`timeline`
 > layer over the immutable commits: the commit content never changes, but you curate
 > how it's described and found.
 
+### Calibrate estimates against real history
+
+Don't estimate effort in human-team units ("about two weeks"). Your real
+throughput is recorded — use it. Before giving an estimate, check how long
+analogous past work ACTUALLY took:
+
+- `nem stats` — per-project **active time vs calendar span**, sessions, recency
+  (a good start-of-session overview of what was worked on and how long).
+- `nem timeline <project|chatID>` / MCP `nem_duration` — active time, sessions and
+  last activity for one target.
+
+Distinguish **active time** (real work) from **calendar span** (wall-clock, which
+includes the user being away). Anchor your estimate in the *active* time of
+similar tasks, not in generic timelines.
+
 ## 2. While working: IDENTIFY what's worth keeping
 
 Persist only high-signal context: design decisions and their rationale,

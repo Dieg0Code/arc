@@ -17,7 +17,7 @@ func TestHeuristicSummary(t *testing.T) {
 		msgs       []db.Message
 		wantSubstr []string // deben aparecer
 		wantAbsent []string // NO deben aparecer
-		wantExact  string    // si != "", igualdad exacta
+		wantExact  string   // si != "", igualdad exacta
 	}{
 		{
 			name:  "skips AGENTS.md boilerplate, uses real request",

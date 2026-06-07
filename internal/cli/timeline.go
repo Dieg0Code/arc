@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Dieg0Code/nem/internal/timing"
 	"github.com/spf13/cobra"
 )
 
@@ -46,13 +47,19 @@ func runTimeline(cmd *cobra.Command, target string) error {
 		chatIDs = []string{target} // tratar como chatID
 	}
 
+	out := cmd.OutOrStdout()
+
+	// Encabezado de duración real (tiempo activo vs calendario).
+	if span, e := timing.SpanForChats(store, chatIDs); e == nil && span.Msgs > 0 {
+		fmt.Fprintf(out, "%s — %s\n\n", target, span.Line(time.Now().Unix()))
+	}
+
 	nodes, err := store.CommitNodes(chatIDs)
 	if err != nil {
 		return err
 	}
-	out := cmd.OutOrStdout()
 	if len(nodes) == 0 {
-		fmt.Fprintf(out, "no commits for %q (nothing committed yet, or run 'nem index')\n", target)
+		fmt.Fprintf(out, "no commits yet for %q (run 'nem index' / nothing committed)\n", target)
 		return nil
 	}
 

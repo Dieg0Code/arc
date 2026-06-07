@@ -22,6 +22,7 @@ import (
 	"github.com/Dieg0Code/nem/internal/scope"
 	"github.com/Dieg0Code/nem/internal/session"
 	"github.com/Dieg0Code/nem/internal/summarize"
+	"github.com/Dieg0Code/nem/internal/timing"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -71,6 +72,10 @@ func newServer(store db.Store, version string) *mcp.Server {
 		Name:        "nem_annotate",
 		Description: "Rewrite a node's summary when the auto-generated one is wrong or thin (node ids: project:foo, chat:id, commit:hash). Your summary is pinned and survives re-index — the mutable layer over immutable commits.",
 	}, h.annotate)
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "nem_duration",
+		Description: "How long a chat or project ACTUALLY took: active work time vs calendar span, sessions, last activity. Use it to calibrate effort estimates against real history instead of generic human-team timelines.",
+	}, h.duration)
 
 	return server
 }
@@ -157,6 +162,9 @@ func (h *handlers) walk(b *strings.Builder, n db.Node, level, depth int, allowed
 	}
 	indent := strings.Repeat("  ", level)
 	fmt.Fprintf(b, "%s- [%s] %s", indent, n.Kind, n.Title)
+	if n.ActiveSecs > 0 {
+		fmt.Fprintf(b, " · ~%s active", timing.Format(time.Duration(n.ActiveSecs)*time.Second))
+	}
 	if s := strings.TrimSpace(n.Summary); s != "" {
 		fmt.Fprintf(b, " — %s", s)
 	}
@@ -344,6 +352,9 @@ func (h *handlers) timeline(ctx context.Context, _ *mcp.CallToolRequest, in time
 		return nil, none{}, err
 	}
 	var b strings.Builder
+	if span, e := timing.SpanForChats(h.store, chatIDs); e == nil && span.Msgs > 0 {
+		fmt.Fprintf(&b, "%s — %s\n\n", in.Target, span.Line(time.Now().Unix()))
+	}
 	if len(nodes) == 0 {
 		fmt.Fprintf(&b, "no commits for %q\n", in.Target)
 	}
@@ -355,6 +366,33 @@ func (h *handlers) timeline(ctx context.Context, _ *mcp.CallToolRequest, in time
 		fmt.Fprintf(&b, "%s  %s  %s%s\n", time.Unix(n.CreatedAt, 0).Format("2006-01-02 15:04"), short(n.CommitHash), n.Title, marker)
 	}
 	return textResult(b.String()), none{}, nil
+}
+
+// --- duration ---
+
+type durationIn struct {
+	Target string `json:"target" jsonschema:"a project name (chat title) or a chat id"`
+}
+
+func (h *handlers) duration(ctx context.Context, _ *mcp.CallToolRequest, in durationIn) (*mcp.CallToolResult, none, error) {
+	chats, err := h.store.ListChats()
+	if err != nil {
+		return nil, none{}, err
+	}
+	var chatIDs []string
+	for _, c := range chats {
+		if c.Title == in.Target {
+			chatIDs = append(chatIDs, c.ID)
+		}
+	}
+	if len(chatIDs) == 0 {
+		chatIDs = []string{in.Target}
+	}
+	span, err := timing.SpanForChats(h.store, chatIDs)
+	if err != nil {
+		return nil, none{}, err
+	}
+	return textResult(fmt.Sprintf("%s — %s", in.Target, span.Line(time.Now().Unix()))), none{}, nil
 }
 
 // --- status ---

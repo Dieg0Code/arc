@@ -14,6 +14,7 @@ import (
 	"github.com/Dieg0Code/nem/internal/db"
 	"github.com/Dieg0Code/nem/internal/embed"
 	"github.com/Dieg0Code/nem/internal/summarize"
+	"github.com/Dieg0Code/nem/internal/timing"
 )
 
 // summaryTextBudget acota cuánto texto de la conversación se le pasa al LLM.
@@ -219,6 +220,7 @@ func (b *builder) Build() (*Report, error) {
 	var nodes []db.Node
 	projPos := map[string]int{}           // projID → posición en nodes (para sintetizar su resumen al final)
 	projChatSums := map[string][]string{} // projID → resúmenes de sus chats
+	projSpan := map[string]timing.Span{}  // projID → duración agregada de sus chats
 	fresh := map[string]bool{}            // node IDs cuyo contenido es nuevo/cambiado (para re-embeber)
 	done := 0
 
@@ -258,6 +260,13 @@ func (b *builder) Build() (*Report, error) {
 				fresh[chatNodeID] = true // cambió → re-embeber
 			}
 		}
+		// Duración real del chat (tiempo activo vs calendario, role-aware).
+		span, err := timing.SpanForChats(b.store, []string{chat.ID})
+		if err != nil {
+			return nil, err
+		}
+		projSpan[projID] = projSpan[projID].Merge(span)
+
 		nodes = append(nodes, db.Node{
 			ID:         chatNodeID,
 			ParentID:   projID,
@@ -268,6 +277,10 @@ func (b *builder) Build() (*Report, error) {
 			CreatedAt:  chat.CreatedAt,
 			MsgFromSeq: 1,
 			Pinned:     isPinned,
+			ActiveSecs: int64(span.Active.Seconds()),
+			WallSecs:   int64(span.Wall.Seconds()),
+			Sessions:   span.Sessions,
+			LastActive: span.Last,
 		})
 		projChatSums[projID] = append(projChatSums[projID], summary)
 		rep.Chats++
@@ -304,8 +317,15 @@ func (b *builder) Build() (*Report, error) {
 	// Resumen de proyecto: sintetizado de sus chats (mejor que "Project: X"),
 	// salvo que esté pinned. Solo se marca fresh si cambió respecto al previo.
 	for projID, pos := range projPos {
-		if ps, ok := pinned[projID]; ok {
-			nodes[pos].Summary = ps
+		// Duración agregada del proyecto (no se "pinea": siempre se recomputa).
+		ps := projSpan[projID]
+		nodes[pos].ActiveSecs = int64(ps.Active.Seconds())
+		nodes[pos].WallSecs = int64(ps.Wall.Seconds())
+		nodes[pos].Sessions = ps.Sessions
+		nodes[pos].LastActive = ps.Last
+
+		if pin, ok := pinned[projID]; ok {
+			nodes[pos].Summary = pin
 			nodes[pos].Pinned = true
 			continue
 		}
