@@ -246,7 +246,7 @@ func (b *builder) Build() (*Report, error) {
 			summary, ok = prevSummary[chat.ID]
 			if !ok {
 				// Solo acá tocamos el summarizer (y leemos los primeros mensajes).
-				first, err := b.store.MessagesBySeqRange(chat.ID, 1, 8, []string{"user", "assistant"})
+				first, err := b.store.MessagesBySeqRange(chat.ID, 1, 10, []string{"user", "assistant"})
 				if err != nil {
 					return nil, err
 				}
@@ -414,25 +414,6 @@ func (b *builder) commitRange(chatID string, c db.Commit) (int64, int64) {
 		to = m.Seq
 	}
 	return from, to
-}
-
-// HeuristicSummary arma un resumen barato (sin LLM): el primer mensaje de usuario
-// (la tarea/tema), con fallback al primer mensaje disponible.
-func HeuristicSummary(chat db.Chat, firstMsgs []db.Message) string {
-	for _, m := range firstMsgs {
-		if m.Role == "user" && strings.TrimSpace(m.Content) != "" {
-			return oneLine(m.Content)
-		}
-	}
-	for _, m := range firstMsgs {
-		if strings.TrimSpace(m.Content) != "" {
-			return oneLine(m.Content)
-		}
-	}
-	if chat.Title != "" {
-		return chat.Title
-	}
-	return "(empty chat)"
 }
 
 // projectKey normaliza el título del chat a una clave de proyecto.
