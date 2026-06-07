@@ -35,9 +35,11 @@ git (via `os/exec`).
 
 **Windows (Scoop):**
 ```powershell
-scoop bucket add arc https://github.com/Dieg0Code/scoop-bucket
-scoop install arc
+scoop bucket add Dieg0Code https://github.com/Dieg0Code/scoop-bucket
+scoop install Dieg0Code/arc
 ```
+> Note: install the bucket-qualified `Dieg0Code/arc` — plain `arc` collides with
+> the `arc` archiver in Scoop's `main` bucket.
 
 **macOS / Linux (Homebrew):**
 ```bash
