@@ -66,6 +66,41 @@ type Store interface {
 	ListCommits(chatID string) ([]Commit, error)
 	// ListAllCommits lista todos los commits (para exportar en sync).
 	ListAllCommits() ([]Commit, error)
+
+	// --- árbol de índice (nodes) ---
+	// ClearNodes borra todo el árbol (para un rebuild completo de `nem index`).
+	ClearNodes() error
+	// UpsertNodes inserta o actualiza nodos por id. Devuelve cuántos escribió.
+	UpsertNodes(nodes []Node) (int64, error)
+	// GetNode devuelve un nodo por id (nil, nil si no existe).
+	GetNode(id string) (*Node, error)
+	// ChildNodes devuelve los hijos directos de un nodo (orden por CreatedAt).
+	ChildNodes(parentID string) ([]Node, error)
+	// RootNodes devuelve los nodos raíz (ParentID == "").
+	RootNodes() ([]Node, error)
+	// CountNodes cuenta los nodos del árbol.
+	CountNodes() (int64, error)
+	// SearchNodes busca full-text (FTS5/BM25) sobre title+summary de los nodos.
+	// chatIDs limita a esos chats (scope); vacío/nil = sin filtro.
+	SearchNodes(query string, limit int, chatIDs []string) ([]NodeHit, error)
+	// CommitNodes devuelve los nodos de commit de los chats dados, ordenados por
+	// CreatedAt ascendente (para la vista temporal `nem timeline`). chatIDs
+	// vacío/nil = todos.
+	CommitNodes(chatIDs []string) ([]Node, error)
+
+	// --- embeddings (capa opcional) ---
+	// ClearEmbeddings borra todos los vectores.
+	ClearEmbeddings() error
+	// UpsertEmbeddings inserta/actualiza vectores por NodeID.
+	UpsertEmbeddings(embs []Embedding) (int64, error)
+	// AllEmbeddings devuelve todos los vectores guardados.
+	AllEmbeddings() ([]Embedding, error)
+}
+
+// NodeHit es un resultado de búsqueda sobre el árbol: el nodo más su score BM25.
+type NodeHit struct {
+	Node
+	Score float64
 }
 
 // SearchHit es un resultado de búsqueda: el mensaje más metadata del chat y el

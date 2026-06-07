@@ -31,6 +31,25 @@ END;
 CREATE TRIGGER IF NOT EXISTS messages_fts_au AFTER UPDATE ON messages BEGIN
     UPDATE messages_fts SET content = new.content WHERE message_id = old.id;
 END;
+
+CREATE VIRTUAL TABLE IF NOT EXISTS nodes_fts USING fts5(
+    node_id UNINDEXED,
+    title,
+    summary,
+    tokenize = 'porter unicode61'
+);
+
+CREATE TRIGGER IF NOT EXISTS nodes_fts_ai AFTER INSERT ON nodes BEGIN
+    INSERT INTO nodes_fts(node_id, title, summary) VALUES (new.id, new.title, new.summary);
+END;
+
+CREATE TRIGGER IF NOT EXISTS nodes_fts_ad AFTER DELETE ON nodes BEGIN
+    DELETE FROM nodes_fts WHERE node_id = old.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS nodes_fts_au AFTER UPDATE ON nodes BEGIN
+    UPDATE nodes_fts SET title = new.title, summary = new.summary WHERE node_id = old.id;
+END;
 `
 
 // migrate corre AutoMigrate sobre los modelos relacionales y luego crea la capa

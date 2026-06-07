@@ -51,6 +51,11 @@ func NewRootCmd() *cobra.Command {
 	root.AddCommand(newCloneCmd())
 	root.AddCommand(newSkillCmd())
 	root.AddCommand(newScopeCmd())
+	root.AddCommand(newIndexCmd())
+	root.AddCommand(newOutlineCmd())
+	root.AddCommand(newTimelineCmd())
+	root.AddCommand(newMCPCmd())
+	root.AddCommand(newConfigCmd())
 
 	return root
 }

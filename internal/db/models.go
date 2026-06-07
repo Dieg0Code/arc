@@ -60,6 +60,36 @@ type Memory struct {
 	UpdatedAt  int64
 }
 
+// Node es un nodo del árbol de índice (estilo PageIndex) que el agente navega:
+// root → project → chat → commit (→ segment). El Summary es lo que el agente lee
+// para decidir en qué rama bajar; el rango [MsgFromSeq, MsgToSeq] permite el
+// drill-down al contenido real. Es el equivalente a una "tabla de contenidos"
+// de todo el historial, sin embeddings.
+type Node struct {
+	ID           string `gorm:"primaryKey"`
+	ParentID     string `gorm:"index"` // padre en el árbol ("" para root)
+	Kind         string `gorm:"index"` // root|project|chat|commit|segment
+	ChatID       string `gorm:"index"` // chat dueño (chat/commit/segment)
+	Title        string //
+	Summary      string // lo que el agente lee para navegar
+	MsgFromSeq   int64  // rango cubierto (drill-down)
+	MsgToSeq     int64  //
+	CommitHash   string // si Kind==commit
+	CreatedAt    int64  `gorm:"index"` // tiempo de la fuente (orden temporal); se setea explícito
+	Tokens       int    // tamaño aprox. del contenido (para presupuestar)
+	Superseded   bool   // la decisión fue reemplazada por una posterior
+	SupersededBy string // id del nodo/commit que la reemplaza
+}
+
+// Embedding es el vector (opcional) de un nodo del índice, guardado como BLOB
+// float32. Capa semántica apagada por default; se llena con `nem index` cuando
+// hay un backend de embeddings configurado.
+type Embedding struct {
+	NodeID string `gorm:"primaryKey"`
+	Dim    int
+	Vec    []byte // float32 little-endian (ver internal/embed.Encode)
+}
+
 // models devuelve todos los modelos para AutoMigrate.
 func models() []any {
 	return []any{
@@ -68,5 +98,7 @@ func models() []any {
 		&Commit{},
 		&Staging{},
 		&Memory{},
+		&Node{},
+		&Embedding{},
 	}
 }

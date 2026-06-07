@@ -11,6 +11,16 @@ metadata:
 Your context window is wiped between sessions; nem's isn't. You (the agent) drive
 it: recall at the start, persist what you resolve.
 
+> **Prefer MCP tools if available.** If nem is connected as an MCP server, use the
+> tools `nem_outline`, `nem_search`, `nem_read`, `nem_timeline`, `nem_status`,
+> `nem_commit` instead of the CLI below — same capabilities, structured. The CLI
+> is the fallback when MCP isn't wired.
+>
+> **Navigate, don't just keyword-search.** nem builds a tree (project → chat →
+> commit). Start with `outline` to see the map, reason about which branch fits,
+> then drill in with `read`. Search is keyword-first (BM25); the structure is how
+> you find things by meaning.
+
 ## 1. At the start: RECALL
 
 - `nem status` — detected chat, staged messages, latest commit.
