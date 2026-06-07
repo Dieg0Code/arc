@@ -1,6 +1,6 @@
 <div align="center">
 
-# nem
+<img src="assets/logo.png" alt="nem" width="300"/>
 
 **Your agent forgets. nem doesn't.**
 
